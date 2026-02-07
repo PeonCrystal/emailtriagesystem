@@ -1,0 +1,41 @@
+Rule Name,Match Criteria,Action Raw,Apply label,Forward to,Mark as read,Skip Inbox,Star it,Important,Never spam
+PROTEAMJERSEYS,to:(@proteamjerseys.com),"Apply label ""PROTEAMJERSEYS""",PROTEAMJERSEYS,,False,False,False,False,False
+Comms,to:(info@dadsprinting.com) subject:(Following up on your order with Dads Printing) label:inbox -{monday.com},"Apply label ""COMMS - POST FOLLOWUP""",COMMS - POST FOLLOWUP,,False,False,False,False,False
+Comms,to:(info@dadsprinting.com) mailed-by:dadsprinting.com subject:(New message),"Apply label ""COMMS-CONTACTFORM""",COMMS-CONTACTFORM,,False,False,False,False,False
+Payable,subject:(from Pressing Matters Screen Printing Inc.),"Apply label ""TAG-SYS/Payable""",TAG-SYS/Payable,,False,False,False,False,False
+Canada Post receipts,from:(donotreply@canadapost.ca),"Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,False,False,False,False,False
+Clover receipts,from:(app@clover.com),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+Generic purchase receipt,subject:(Purchase Receipt),"Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,False,False,False,False,False
+Interac receipts,from:(catch@payments.interac.ca) subject:(Interac e-Transfer: Your),"Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,False,False,False,False,False
+Interac receipts,from:(notify@payments.interac.ca) subject:(was deposited),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+PayPal receipts,from:(service@intl.paypal.com) subject:(Receipt for Your Payment to),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+PayPal receipts,from:(service@intl.paypal.com) subject:(You sent a payment),"Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,False,False,False,False,False
+PayPal receipts,from:(service@intl.paypal.com) subject:(You submitted an order in the amount of),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+PayPal receipts,from:(service@intl.paypal.com) subject:(You authorized a payment to),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+PayPal receipts,from:(service@intl.paypal.com) subject:CAD,"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+Pipedrive billing receipts,from:(billing@pipedrivebilling.com),"Skip Inbox, Apply label ""TAG-SYS/Receipts 2026"", Never send it to Spam",TAG-SYS/Receipts 2026,,False,True,False,False,True
+Receipts,from:(notifications@bchydro.com) subject:(Thanks for your recent payment),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+Receipts,subject:(you have authorized a payment to),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+S&S receipts/invoices,from:(mail@ssactivewear.com) subject:(S&S Canada - Invoices),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+S&S receipts/invoices,from:(mail@ssactivewear.com) S&S Canada ~ Order Confirmation,"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+Screen Print Store receipts,Your The Screen Print Store Order Confirmation,"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+Square receipts,from:(messenger@messaging.squareup.com),"Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,False,False,False,False,False
+Uber/Lyft receipts,from:(noreply@uber.com OR no-reply@lyftmail.com),"Mark as read, Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,True,False,False,False,False
+Upwork receipts,from:(donotreply@upwork.com) Payment Received,"Apply label ""TAG-SYS/Receipts 2026""",TAG-SYS/Receipts 2026,,False,False,False,False,False
+Receivable,from:(quickbooks@notification.intuit.com) Payment receiver,"Apply label ""TAG-SYS/Receivable""",TAG-SYS/Receivable,,False,False,False,False,False
+Receivable,from:(notify@payments.interac.ca) Interac e-Transfer: You've,"Apply label ""TAG-SYS/Receivable""",TAG-SYS/Receivable,,False,False,False,False,False
+Forms intake,from:(info@dadsprinting.com) subject:(Form Submission) label:inbox,"Apply label ""Forms""",Forms,,False,False,False,False,False
+Forward to admin@dadsprinting.com,left a review for Dads Printing,"Star it, Forward to admin@dadsprinting.com, Mark it as important",,admin@dadsprinting.com,False,False,True,True,False
+Forward to kevin@dadsprinting.com,from:(noreply @notifications.sucuri.net),Forward to kevin@dadsprinting.com,,kevin@dadsprinting.com,False,False,False,False,False
+Forward to sales@dadsprinting.com,to:(info@dadsprinting.com) subject:(New DTG Form Submission),Forward to sales@dadsprinting.com,,sales@dadsprinting.com,False,False,False,False,False
+Forward to sales@dadsprinting.com,from:(service@tidycal.com),Forward to sales@dadsprinting.com,,sales@dadsprinting.com,False,False,False,False,False
+Forward to sales@dadsprinting.com,from:(do_not_reply@intuit.com) subject:(Your Intuit code),Forward to sales@dadsprinting.com,,sales@dadsprinting.com,False,False,False,False,False
+Forward to sales@dadsprinting.com,subject:(New Custom Tote Bags Form Submission),Forward to sales@dadsprinting.com,,sales@dadsprinting.com,False,False,False,False,False
+Forward to sales@dadsprinting.com,from:(info@dadsprinting.com) subjec,Forward to sales@dadsprinting.com,,sales@dadsprinting.com,False,False,False,False,False
+Forward to sales@dadsprinting.com,from:(info@dadsprinting.com) subject:(New Embroidery form submission),Forward to sales@dadsprinting.com,,sales@dadsprinting.com,False,False,False,False,False
+Rule,from:(CSR@sanmarcanada.com) invoice,"Mark as read, Apply label ""TAG-SYS/Receipts 202",,,True,False,False,False,False
+Skip inbox,from:(info@dadsprinting.com) subject:(Backed up: Dads Printing),Skip Inbox,,,False,True,False,False,False
+Skip inbox,from:(orders-ca@ssactivewear.com) subject:Shipment,Skip Inbox,,,False,True,False,False,False
+Monday.com notifications,via monday.com,Mark as read,,,True,False,False,False,False
+Notifications,from:(calendar-notification@google.com OR @calendly.com OR @tidycal.com OR pkginfo@ups.com OR CloudPlatform-noreply@google.com OR support@dhl.com),"Apply label ""Notifications""",Notifications,,False,False,False,False,False
+Notifications,from:(admin@dadsprinting.com) subject:(Missing Fields for Order),"Apply label ""Notifications""",Notifications,,False,False,False,False,False
