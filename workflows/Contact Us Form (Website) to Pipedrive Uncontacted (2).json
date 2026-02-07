@@ -1,0 +1,476 @@
+{
+  "name": "Contact Us Form (Website) to Pipedrive Uncontacted",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "contact-form",
+        "responseCode": null,
+        "options": {}
+      },
+      "name": "Contact Form Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        272
+      ],
+      "id": "d246f6cd-2203-43fe-b99d-6c9058e2f7b5",
+      "webhookId": "6895aa57-a770-433e-be60-c0a3cdcb76e2"
+    },
+    {
+      "parameters": {
+        "resource": "organization",
+        "name": "={{ $json.body['No Label name'] }}",
+        "additionalFields": {}
+      },
+      "name": "Create Pipedrive Organization",
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        272
+      ],
+      "id": "24a01cf5-4f1f-47e8-ab86-43e7577ed6ec",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "name": "={{ $('Contact Form Webhook').item.json.body['No Label name'] }}",
+        "additionalFields": {
+          "email": [
+            "={{ $('Contact Form Webhook').item.json.body['No Label email'] }}"
+          ],
+          "org_id": "={{ $json.id }}",
+          "phone": [
+            "={{ $('Contact Form Webhook').item.json.body['No Label field_bf3a469'] }}"
+          ],
+          "owner_id": 11548535
+        }
+      },
+      "name": "Create Pipedrive Person",
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        -1152,
+        272
+      ],
+      "id": "aa6ba0c3-e1ea-4ab3-a8ac-933bf6ad8baa",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "title": "={{ $('Contact Form Webhook').item.json.body['No Label name'] }} | {{$('Contact Form Webhook').item.json.body['No Label field_a1c13a8']}} | Contact Form Lead (Website)",
+        "associateWith": "person",
+        "person_id": "={{ $json.id }}",
+        "additionalFields": {
+          "stage_id": 7,
+          "user_id": 11548535
+        }
+      },
+      "name": "Create Pipedrive Deal",
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        272
+      ],
+      "id": "2be49069-98e2-44e3-a4e9-516546191ee4",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "note",
+        "content": "={{ $('Contact Form Webhook').item.json.body['No Label message'] }}",
+        "additionalFields": {
+          "deal_id": "={{$('Create Pipedrive Deal').item.json.id}}",
+          "org_id": "={{$('Create Pipedrive Organization').item.json.id}}",
+          "person_id": "={{$('Create Pipedrive Person').item.json.id}}"
+        }
+      },
+      "name": "Create Pipedrive Note",
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        272
+      ],
+      "id": "9b62aebf-6524-4637-a7a7-7d707d5b4640",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "name": "Wait for Folder Creation",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        272
+      ],
+      "id": "5a351c0f-d690-4751-a0b1-002d77e62243",
+      "webhookId": "081fd377-7a00-4831-9d86-5a5cdfc1b81e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Contact Form Webhook').item.json.body['Upload your graphic here! (optional)'] }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Image Provided?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        272
+      ],
+      "id": "814249de-c24f-417b-a431-fe3aa50f3ca0"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Contact Form Webhook').item.json.body['Upload your graphic here! (optional)'] }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Get Image from URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        192,
+        272
+      ],
+      "id": "5d9524e3-7419-4f16-a3ae-7e99a99fad2c"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "binaryData": true,
+        "name": "={{ $('Contact Form Webhook').item.json.body['Upload your graphic here! (optional)'].split('/').pop() }}",
+        "parents": [
+          "={{ $('Search files and folders').item.json.id }}"
+        ],
+        "options": {}
+      },
+      "name": "Upload Image to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [
+        416,
+        272
+      ],
+      "id": "1d259105-f2ff-4dc5-b083-29744381dae8",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "vRxWCRiLXg1D0YQL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "=Pipedrive Deal {{ $('Create Pipedrive Deal').item.json.id }}",
+        "limit": 1,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1_kwf7PNaAstAWyBTW_SDoqKbXlAcCUPC",
+            "mode": "list",
+            "cachedResultName": "ORDER FOLDERS FOR SEP 25 2025 AND BEYOND",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1_kwf7PNaAstAWyBTW_SDoqKbXlAcCUPC"
+          },
+          "whatToSearch": "folders"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -32,
+        272
+      ],
+      "id": "fd2a4d4d-4d14-4ed0-94d8-4e4b358cf9a1",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "vRxWCRiLXg1D0YQL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 2,
+        "filters": {
+          "q": "={{ $('Contact Form Webhook').item.json.body['No Label email'] }}",
+          "readStatus": "unread"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        272
+      ],
+      "id": "78de5fba-f453-4359-844b-35c29c03b41b",
+      "name": "Get many messages",
+      "webhookId": "9033d9bc-711b-4530-a0fd-b6c6ecb4f6c8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_824305247270003185"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        624
+      ],
+      "id": "682cc539-e727-411f-8979-9e88395ed9dd",
+      "name": "Add-Comms-Contact",
+      "webhookId": "136edbbc-9005-4547-ad67-b2f1732071dc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.srv1218776.hstgr.cloud/webhook/e1b93242-59cd-48e0-ab9c-3b0756350ace",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ThreadID",
+              "value": "={{ $json.messages[0].threadId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1072,
+        624
+      ],
+      "id": "e11477a6-f844-4121-9d83-02d6efc28efc",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "content": "## NOTE\n**https://n8n.srv1218776.hstgr.cloud/workflow/NuItMNJNkrqQQ6EP - IS TRIGGERD BY THIS\n* to edit me. "
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        0
+      ],
+      "id": "fb88fd38-3e79-4af0-9b93-6576dc4892af",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Contact Form Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Pipedrive Organization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Pipedrive Organization": {
+      "main": [
+        [
+          {
+            "node": "Create Pipedrive Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Pipedrive Person": {
+      "main": [
+        [
+          {
+            "node": "Create Pipedrive Deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Pipedrive Deal": {
+      "main": [
+        [
+          {
+            "node": "Create Pipedrive Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Pipedrive Note": {
+      "main": [
+        [
+          {
+            "node": "Image Provided?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Folder Creation": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Provided?": {
+      "main": [
+        [
+          {
+            "node": "Wait for Folder Creation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add-Comms-Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Image from URL": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Get Image from URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Drive": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Add-Comms-Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add-Comms-Contact": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ODmvYJ8wvhvQCqKJ"
+  },
+  "versionId": "1278865c-b5a8-4bcc-9db4-d40ff9e2b180",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "My8UbRJTKmjQ5uCn",
+  "tags": []
+}

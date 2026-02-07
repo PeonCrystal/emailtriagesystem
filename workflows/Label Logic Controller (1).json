@@ -1,0 +1,523 @@
+{
+  "name": "Label Logic Controller",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 100,
+        "filters": {
+          "q": "(label:TAG-SYS/Sales OR label:TAG-SYS/CS OR label:TAG-SYS/Personal OR label:TAG-SYS/GOV OR label:TAG-SYS/OPS OR label:TAG-SYS/Receivable OR label:TAG-SYS/Payable OR label:TAG-SYS/Receipts-2026 OR label:TAG-SYS/Unsure OR label:TAG-SYS/Forms) newer_than:1d"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        0
+      ],
+      "id": "3aaaa591-aca5-496f-8121-6237ee3f1700",
+      "name": "Fetch TAG-SYS Emails",
+      "webhookId": "46b031f1-3dca-454f-bbdf-88b85bf9dfc2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.needsUpdate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "c3a2a388-badf-4c2e-8c3c-e83d39715b9e",
+      "name": "Needs Update?"
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": "={{ $json.labelsToRemoveIds }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        0
+      ],
+      "id": "a6b851ee-86b2-4c58-b1ce-3ae34569eac6",
+      "name": "Remove Conflicting Labels",
+      "webhookId": "038e0b5a-0ef7-4e9e-bc8c-c84665a18bb3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1CuFxhRLhDbGYX0Eh8gnXgPpcWO043nKnryxkQaBIjfc",
+          "mode": "list",
+          "cachedResultName": "Label Logic Audit Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CuFxhRLhDbGYX0Eh8gnXgPpcWO043nKnryxkQaBIjfc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CuFxhRLhDbGYX0Eh8gnXgPpcWO043nKnryxkQaBIjfc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toFormat(\"MMMM d yyyy, h:mm:ss a\") }}",
+            "Message ID": "={{ $('Needs Update?').item.json.threadId }}",
+            "Subject": "={{ $('Needs Update?').item.json.subject }}",
+            "Reason": "={{ $('Label Logic Controller').item.json.reason }}",
+            "Labels_Removed": "={{ $('Needs Update?').item.json.labelsRemoved }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Labels_Removed",
+              "displayName": "Labels_Removed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1664,
+        -96
+      ],
+      "id": "cadc1c74-7fe1-4a67-8906-92acfd3eb185",
+      "name": "Log to Audit Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Label Logic Controller\n\nRuns every 3 minutes to enforce label consistency.\n\n**Rules Enforced:**\n1. Only one A-label allowed\n2. Only one B-label per category\n3. B-labels require parent A-label\n4. State transitions (QUOTE removes NEEDS-INFO, etc.)\n5. Terminal states lock (LOST, DELEGATED)\n6. Receipts removes Payable\n\n**Logs all changes to audit sheet.**",
+        "height": 280,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -416
+      ],
+      "id": "d0287a0c-5992-4098-996a-dc4a6cee2f63",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        0
+      ],
+      "id": "de431109-4e1b-452f-ba18-63a8e9f11f77",
+      "name": "Every 10 Minutes"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1CuFxhRLhDbGYX0Eh8gnXgPpcWO043nKnryxkQaBIjfc",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CuFxhRLhDbGYX0Eh8gnXgPpcWO043nKnryxkQaBIjfc/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Message ID",
+              "lookupValue": "={{ $('Needs Update?').item.json.threadId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "9993fdd5-518d-43d8-bd3c-95965b46fe0d",
+      "name": "Lookup Thread in Audit Sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4b3b8e2a-b3ec-45eb-bdfa-701b78006b6f",
+              "leftValue": "={{ $json.row_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1440,
+        0
+      ],
+      "id": "7f13370d-e05d-46c7-9566-495a86d2b8ea",
+      "name": "Thread Exists?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1CuFxhRLhDbGYX0Eh8gnXgPpcWO043nKnryxkQaBIjfc",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CuFxhRLhDbGYX0Eh8gnXgPpcWO043nKnryxkQaBIjfc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toFormat(\"MMMM d yyyy, h:mm:ss a\") }}",
+            "Message ID": "={{ $('Needs Update?').item.json.threadId }}",
+            "Subject": "={{ $('Needs Update?').item.json.subject }}",
+            "Labels_Removed": "={{ $('Needs Update?').item.json.labelsRemoved }}",
+            "Reason": "={{ $('Needs Update?').item.json.reason }}",
+            "row_number": "={{ $json.row_number }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Labels_Removed",
+              "displayName": "Labels_Removed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1664,
+        96
+      ],
+      "id": "027a5918-3c26-46e9-b2cc-32a7ff155896",
+      "name": "Update Audit Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const A_LABELS = ['TAG-SYS/Sales', 'TAG-SYS/CS', 'TAG-SYS/Personal', 'TAG-SYS/GOV', 'TAG-SYS/OPS', 'TAG-SYS/Receivable', 'TAG-SYS/Payable', 'TAG-SYS/Receipts 2026', 'TAG-SYS/Unsure', 'TAG-SYS/Forms'];\nconst SALES_B_LABELS = ['TAG-SYS/Sales/NEEDS-INFO', 'TAG-SYS/Sales/QUOTE', 'TAG-SYS/Sales/INVOICE', 'TAG-SYS/Sales/LOST'];\nconst CS_B_LABELS = ['TAG-SYS/CS/ROUTE-CS', 'TAG-SYS/CS/INVOLVED', 'TAG-SYS/CS/DELEGATED'];\n\nconst SALES_B_PRIORITY = ['NEEDS-INFO', 'QUOTE', 'INVOICE', 'LOST'];\nconst CS_B_PRIORITY = ['ROUTE-CS', 'INVOLVED', 'DELEGATED'];\n\nconst uniqueThreads = new Map();\n\nfor (const item of $input.all()) {\n  const email = item.json;\n  const threadId = email.threadId;\n\n  // Process each thread only once per run\n  if (uniqueThreads.has(threadId)) continue;\n\n  const labelMap = {};\n  const labels = email.labels || [];\n  labels.forEach(l => labelMap[l.name] = l.id);\n\n  const currentLabelNames = Object.keys(labelMap);\n  const labelsToRemoveNames = [];\n  const reasons = [];\n\n  // RULE 1: Only one A-label\n  const presentALabels = currentLabelNames.filter(l => A_LABELS.includes(l));\n  if (presentALabels.length > 1) {\n    const toRemove = presentALabels.slice(0, -1);\n    toRemove.forEach(l => labelsToRemoveNames.push(l));\n    reasons.push(`Multiple A-labels: keeping ${presentALabels[presentALabels.length - 1]}`);\n  }\n  const activeALabel = presentALabels.length > 0 ? presentALabels[presentALabels.length - 1] : 'No A-Label';\n\n  // RULE 2: Orphaned B-labels\n  const presentSalesBLabels = currentLabelNames.filter(l => SALES_B_LABELS.includes(l));\n  const presentCSBLabels = currentLabelNames.filter(l => CS_B_LABELS.includes(l));\n\n  if (activeALabel !== 'TAG-SYS/Sales' && presentSalesBLabels.length > 0) {\n    presentSalesBLabels.forEach(l => labelsToRemoveNames.push(l));\n    reasons.push('Orphaned Sales B-labels');\n  }\n  if (activeALabel !== 'TAG-SYS/CS' && presentCSBLabels.length > 0) {\n    presentCSBLabels.forEach(l => labelsToRemoveNames.push(l));\n    reasons.push('Orphaned CS B-labels');\n  }\n\n  // Priority & State Transitions\n  const cleanPriority = (active, labels, priorityArray, prefix) => {\n    if (active === prefix && labels.length > 1) {\n      let winner = labels.reduce((p, c) => priorityArray.indexOf(c.replace(prefix + '/', '')) > priorityArray.indexOf(p.replace(prefix + '/', '')) ? c : p);\n      labels.forEach(l => { if (l !== winner) labelsToRemoveNames.push(l); });\n      reasons.push(`Cleaned ${prefix} priority`);\n    }\n  };\n  cleanPriority(activeALabel, presentSalesBLabels, SALES_B_PRIORITY, 'TAG-SYS/Sales');\n  cleanPriority(activeALabel, presentCSBLabels, CS_B_PRIORITY, 'TAG-SYS/CS');\n\n  // Specific Logic (Receipts 2026 removes Payable)\n  if (currentLabelNames.includes('TAG-SYS/Receipts 2026') && currentLabelNames.includes('TAG-SYS/Payable')) {\n    labelsToRemoveNames.push('TAG-SYS/Payable');\n    reasons.push('Receipt removes Payable');\n  }\n\n  const labelsToRemoveIds = labelsToRemoveNames.map(name => labelMap[name]).filter(id => id);\n\n  if (labelsToRemoveIds.length > 0) {\n    uniqueThreads.set(threadId, {\n      json: {\n        threadId: threadId,\n        messageId: email.id,\n        subject: email.Subject || email.subject || '(no subject)', // Fixed mapping\n        columnD_ActiveLabel: activeALabel,\n        labelsToRemoveIds: labelsToRemoveIds, // For Gmail node\n        labelsRemoved: labelsToRemoveNames.join(', '), // For Sheet (Readable)\n        reason: reasons.join('; '), // For Sheet (Audit)\n        needsUpdate: true\n      }\n    });\n  }\n}\n\nconst results = Array.from(uniqueThreads.values());\nreturn results.length > 0 ? results : [{ json: { needsUpdate: false, message: 'Consistent' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        0
+      ],
+      "id": "b45d771c-7083-427e-b524-5cb01d92c33a",
+      "name": "Label Logic Controller"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Fetch TAG-SYS Emails": {
+      "main": [
+        [
+          {
+            "node": "Label Logic Controller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Update?": {
+      "main": [
+        [
+          {
+            "node": "Remove Conflicting Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Conflicting Labels": {
+      "main": [
+        [
+          {
+            "node": "Lookup Thread in Audit Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 10 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch TAG-SYS Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Thread in Audit Sheet": {
+      "main": [
+        [
+          {
+            "node": "Thread Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thread Exists?": {
+      "main": [
+        [
+          {
+            "node": "Log to Audit Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Audit Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label Logic Controller": {
+      "main": [
+        [
+          {
+            "node": "Needs Update?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "3042ced8-55e5-4cdf-bc30-50dcad4729e0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "VzJLrovTDxLXUAdOzeL4j",
+  "tags": [
+    {
+      "updatedAt": "2025-11-16T00:26:22.434Z",
+      "createdAt": "2025-11-16T00:26:22.434Z",
+      "id": "dJGSllKQRCQuCvjQ",
+      "name": "VA / for info@"
+    },
+    {
+      "updatedAt": "2025-09-18T21:07:48.004Z",
+      "createdAt": "2025-09-18T21:07:48.004Z",
+      "id": "la3xBPTfmFJpCXec",
+      "name": "COMMS"
+    }
+  ]
+}

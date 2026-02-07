@@ -1,0 +1,572 @@
+{
+  "name": "COMMS - Following Up Reply Automator",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## COMMS - FOLLOW UP REPLY AUTOMATOR\n\nGOAL: To automate replies to followup emails based off a tag that is automatically assigned with a gmal rule (setup in gmail to apply (label:comms---post-followup) - to emails that come back with the \"Following up with on your Dad's Printing order).\n\nThe tag being assigned triggers an analysis of the email response and does 1 of the 3 based on the sentiment of the response (judged by openai module):\n\n1. Happy - automatically says \"reviewask\" shortcode. \n2. Unhappy - adds CS Tag to thread (keeps unread) and triggers [This Workflow](https://n8n.srv1001839.hstgr.cloud/workflow/3oJeKPMz0P5NefA0)\n3. New Order - sends an email to sales rep indicating the customer wants a new order. \n\nThis essentially makes replying to these a non touch process and something that is truly automated. \n\nBuilt by Adam Lando Dec 14 2025\n",
+        "height": 368,
+        "width": 784
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -464
+      ],
+      "id": "2ff2262d-52a5-4799-97cc-028ae7892c90",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1088,
+        32
+      ],
+      "id": "738766a4-3f70-45f4-8953-f3c84a2469fd",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "Label_3844778958143695381"
+          ],
+          "q": "is:unread -from:info@dadsprinting.com"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        32
+      ],
+      "id": "e1385d9d-39c0-43b1-8e05-2e6292a52ddf",
+      "name": "Get many messages",
+      "webhookId": "ae3853c0-c54b-47af-b11b-861baea4da9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nconst out = [];\n\nfor (const item of $input.all()) {\n  const t = item.json.threadId;\n  if (!t) continue;\n  if (seen.has(t)) continue;\n  seen.add(t);\n  out.push(item);\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        32
+      ],
+      "id": "06edad19-f51d-4f44-995b-f0d9307ded50",
+      "name": "Dedup by threadId"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You job is to analyze the sentiment of a reply to a follow email from the customer to us, asking how their experience was. Our email asks if they were happy with their experience. Your job is to classify the email as one of the following:\n\n1. happy\n2. unhappy\n3. neworder\n\nHappy means they were happy with the experience and expressed so.\n\nUnhappy means they were unhappy with the experience and they have a complaint or unresolved issue. \n\nNeworder means they have expressed the want to place a new order or a reorder.\n\nDepending on the content of their email that is going into the input, please indicate which of the 3 you think this will fall under. Please indicate only the single word as your output that each option is represented by. IE: If you think it falls under a good experience, it's marked as: happy\n\nPS: If the customer is happy and wants to place a new order, assign with neworder tag instead of happy."
+            },
+            {
+              "content": "={{ $('Dedup by threadId').item.json.html }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        32
+      ],
+      "id": "b77b1941-1e66-417e-8be6-8af0f7fcc28a",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "happy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a0990ef8-1c22-4ade-9271-2f053e784a9e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Happy"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "42799e8d-e5cb-41d8-b1d6-437842a19f5a",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "unhappy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unhappy"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9604591c-d707-499f-be6e-8d4911468727",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "neworder",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "New Order"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        304,
+        16
+      ],
+      "id": "bfbd69e9-8be5-4604-9e93-8b79f0457fa1",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Dedup by threadId').item.json.id }}",
+        "message": "<p>No problem, thank you for letting me know!<br /><br />I'm really happy to hear you were pleased with the quality of our service. I do want to ask a small favor that won't take more than a minute.&nbsp;<br /><br />Would you mind leaving a review of your experience on our Google My Business page?&nbsp;<br /><br />I have provided you with a direct link to post about your experience:&nbsp;<a href=\"http://search.google.com/local/writereview?placeid=ChIJF5EKr3lxhlQROGLw2xVdm5M\">http://search.google.com/local/writereview?placeid=ChIJF5EKr3lxhlQROGLw2xVdm5M</a><br /><br />Reviews make a huge difference for us and if that is something you feel okay to do, we would greatly appreciate it. Let me know if you have any other printing needs in the future.&nbsp;</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        -160
+      ],
+      "id": "2ad0a870-d79f-439d-867f-9e8ae25318eb",
+      "name": "Send Review Request",
+      "webhookId": "52a42056-25a9-401c-bf88-1f215f93aeec",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Dedup by threadId').item.json.threadId }}",
+        "labelIds": [
+          "Label_1540280282738845396"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        32
+      ],
+      "id": "7706c140-095d-446c-9a51-d73f1359be2f",
+      "name": "Add To CS Thread (COMMS-CS)",
+      "webhookId": "1cce52e7-5a7f-49c8-9f35-d67e28f1c714",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.messages[0].threadId }}",
+        "labelIds": [
+          "Label_3844778958143695381",
+          "Label_3917960758757248870",
+          "Label_4445720407385800790"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        32
+      ],
+      "id": "18dbd748-ccb4-4772-85c0-c76b496ed7e9",
+      "name": "Remove POST FOLLOWUP Label (CS only)",
+      "webhookId": "2c04b93f-6698-48c7-8f4a-777e2682040d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "info@dadsprinting.com",
+        "subject": "New Order Request from {{ $('Dedup by threadId').item.json.from.value[0].address }}- please find thread",
+        "message": "=New Order Request from {{ $('Dedup by threadId').item.json.from.value[0].address }}\n Please review asap ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        240
+      ],
+      "id": "f696db26-9c32-4789-987a-ec9db66dd211",
+      "name": "New Order Notice",
+      "webhookId": "e5051fe5-2d0c-42b2-af3f-383dd7b2a6f0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Dedup by threadId').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        -160
+      ],
+      "id": "c24d6eac-a75e-4dae-8da2-222132258669",
+      "name": "Mark a message as read",
+      "webhookId": "ccc2fe8b-863f-4c76-9944-e846b74c0f71",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $('Dedup by threadId').item.json.id }}",
+        "labelIds": [
+          "Label_3844778958143695381"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1216,
+        -160
+      ],
+      "id": "5f6af551-ea75-4a21-955d-94a6223e13f9",
+      "name": "Remove Label from message (POST FOLLOWUP)",
+      "webhookId": "2c04b93f-6698-48c7-8f4a-777e2682040d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "86d9c123-695f-4c67-8b07-504fd20d9004",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -464,
+        32
+      ],
+      "id": "3582ef18-b4a6-4b9d-a409-3c8f4d210d4c",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_4309365623165737053"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        240
+      ],
+      "id": "29abcd62-aa68-48b4-88df-5661cd23b4fa",
+      "name": "Add label to message",
+      "webhookId": "d06bf071-5c43-43a4-a6e9-50e43c639b50",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Dedup by threadId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup by threadId": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send Review Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add To CS Thread (COMMS-CS)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "New Order Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Review Request": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Order Notice": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add To CS Thread (COMMS-CS)": {
+      "main": [
+        [
+          {
+            "node": "Remove POST FOLLOWUP Label (CS only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark a message as read": {
+      "main": [
+        [
+          {
+            "node": "Remove Label from message (POST FOLLOWUP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "Remove Label from message (POST FOLLOWUP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b08d945f-3ba9-4b5a-95c7-f124a68ecbe2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "5HkYYw6CwI7oNGtN",
+  "tags": [
+    {
+      "updatedAt": "2025-09-18T21:07:48.004Z",
+      "createdAt": "2025-09-18T21:07:48.004Z",
+      "id": "la3xBPTfmFJpCXec",
+      "name": "COMMS"
+    },
+    {
+      "updatedAt": "2025-09-17T05:09:43.396Z",
+      "createdAt": "2025-09-17T05:09:43.396Z",
+      "id": "neDNzw7enttbamkp",
+      "name": "Customer Service"
+    }
+  ]
+}

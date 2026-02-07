@@ -1,0 +1,736 @@
+{
+  "name": "CATCH-ALL - Missed Email Recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "q": "is:unread newer_than:7d -from:me -label:TAG-SYS -label:Forms -label:Notifications -label:COMMS-CONTACTFORM -label:\"COMMS - POST FOLLOWUP\" -label:SENT"
+        }
+      },
+      "id": "c94ff8d6-6018-4280-b89e-6882ce8b1df5",
+      "name": "Search Missed Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -656,
+        112
+      ],
+      "webhookId": "2a713d99-bdd8-44c8-940c-f915ea9dd551",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter out emails that already have labels we should skip\n// This is a safety check in case Gmail search didn't catch everything\n\nconst items = $input.all();\nconst filtered = [];\n\nfor (const item of items) {\n  const labels = item.json.labelIds || [];\n  const labelNames = (item.json.labels || []).map(l => l.name);\n  \n  // Check if any TAG-SYS label exists\n  const hasTagSys = labelNames.some(n => n && n.startsWith('TAG-SYS'));\n  const hasForms = labelNames.includes('Forms');\n  const hasNotifications = labelNames.includes('Notifications');\n  const hasCommsContact = labelNames.includes('COMMS-CONTACTFORM');\n  const hasCommsFollowup = labelNames.some(n => n && n.includes('COMMS - POST'));\n  \n  if (!hasTagSys && !hasForms && !hasNotifications && !hasCommsContact && !hasCommsFollowup) {\n    filtered.push(item);\n  }\n}\n\nif (filtered.length === 0) {\n  return [{ json: { noResults: true, message: 'No missed emails found in the last 7 days' } }];\n}\n\nreturn filtered;"
+      },
+      "id": "f3bbab76-912d-4914-b5ff-cbd74048a576",
+      "name": "Safety Filter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "no-results-check",
+              "leftValue": "={{ $json.noResults }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d03ecb70-0748-4615-87e1-c8d074a605d0",
+      "name": "If No Results",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a production-grade email classification engine.\n\nYou do not write emails.\nYou do not roleplay.\nYou do not explain things.\n\nYou output only valid JSON.\n\nIf anything is ambiguous, choose TAG-SYS/Unsure.\n\nFollow all instructions strictly."
+            },
+            {
+              "content": "=You are an enterprise email triage engine for Adam's company.\n\nYour job is NOT to be helpful.\nYour job is to correctly classify, route, and control state inside Gmail.\n\nYou will receive:\n- Email subject\n- Email body/snippet\n- Sender\n- Existing Gmail labels (full names)\n\nYou must output a single JSON object.\n\n━━━━━━━━━━━━━━━━━━━━━━\nGLOBAL RULES\n━━━━━━━━━━━━━━━━━━━━━━\n\n1) You MUST assign exactly one A-label  \n2) You MAY assign one B-label, but only if allowed AND both confidences meet threshold  \n3) Never hallucinate facts  \n4) If uncertain → TAG-SYS/Unsure  \n5) If the email already has ANY label starting with \"TAG-SYS/\" then return:\n\n{\n  \"skip\": true,\n  \"reason\": \"Already processed (TAG-SYS label exists)\"\n}\n\n6) Assume this runs on EVERY new email\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nDO NOT PROCESS IF\n━━━━━━━━━━━━━━━━━━━━━━\n\nIf the email has label \"SENT\", return:\n{\n  \"skip\": true,\n  \"reason\": \"Outbound email (SENT)\"\n}\n\nIf the email has label:\n\n- COMMS-CONTACTFORM\n- COMMS-POSTFOLLOWUP\n- FORMS\n- Notifications\n- \"TAG-SYS/Receipts\"\n- \"TAG-SYS/Receivable\"\n\nReturn:\n{\n  \"skip\": true,\n  \"reason\": \"Excluded by system label\"\n}\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nPERSONAL OVERRIDE (CRITICAL)\n━━━━━━━━━━━━━━━━━━━━━━\n\nIf the email is about ANY of the following, it MUST be classified as TAG-SYS/Personal\nand MUST NOT be classified as Sales or CS:\n\n- Home services (kitchen, counters, plumbing, electrical, renovations)\n- Personal purchases\n- Medical, insurance, travel, banking\n- Real estate unrelated to Adam's businesses\n- Friends or family\n- Any non–revenue-generating personal matter\n\nThis rule OVERRIDES ALL SALES LOGIC.\n\nIf unsure whether something is business or personal → TAG-SYS/Personal or TAG-SYS/Unsure\nNEVER TAG AS SALES BY DEFAULT.\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nRECEIPTS vs PAYABLES (MANDATORY)\n━━━━━━━━━━━━━━━━━━━━━━\n\nThis is the most important financial distinction.\n\nReceipts = payment already happened.  \nPayables = payment is required.\n\nIf the email confirms a completed transaction:\n→ TAG-SYS/Receipts 2026\n\nIf the email requests payment or contains an invoice:\n→ TAG-SYS/Payable\n\nIf BOTH appear:\n- Choose Payable ONLY if money is still owed  \n- Otherwise choose Receipts 2026\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nA-LABELS (Primary Classification)\n━━━━━━━━━━━━━━━━━━━━━━\n\nChoose exactly ONE:\n\nTAG-SYS/Personal  \nFriends, family, landlords, personal services, home services, medical, travel, anything not business.\n\nTAG-SYS/GOV  \nCRA, government, courts, tax agencies, legal filings.\n\nTAG-SYS/OPS  \nVendors, software, tools, suppliers, staff, shipping, subscriptions, vendor solicitations selling to us.\n\nTAG-SYS/Receivable  \nMoney coming IN. Client payments, deposits, Stripe, PayPal, invoices paid.\n\nTAG-SYS/Payable  \nMoney going OUT. Bills, invoices to pay, vendor charges.\n\nTAG-SYS/Receipts 2026  \nCompleted purchases and transaction confirmations for bookkeeping.\n\nTAG-SYS/CS  \nExisting customer with a problem: wrong order, delay, defect, complaint.\n\nTAG-SYS/Sales  \nSomeone trying to buy, quote, reorder, negotiate, or start an order with Adam's businesses.\nDO NOT use for vendors selling to us or personal matters.\n\nTAG-SYS/Unsure  \nAmbiguous or mixed signals.\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nB-LABEL RULES (DUAL CONFIDENCE GATE)\n━━━━━━━━━━━━━━━━━━━━━━\n\nB-labels require BOTH:\n- a_confidence ≥ 0.70\n- b_confidence ≥ 0.80\n\nIf EITHER confidence is below threshold → b_label MUST be null\n\n\nCS B-Labels (only if A = TAG-SYS/CS):\n- TAG-SYS/CS/ROUTE-CS\n- TAG-SYS/CS/INVOLVED\n- TAG-SYS/CS/DELEGATED\n\n\nSales B-Labels (only if A = TAG-SYS/Sales):\n- TAG-SYS/Sales/NEEDS-INFO\n- TAG-SYS/Sales/QUOTE\n- TAG-SYS/Sales/INVOICE\n- TAG-SYS/Sales/LOST\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nNEEDS-INFO vs QUOTE (CRITICAL)\n━━━━━━━━━━━━━━━━━━━━━━\n\nWHEN IN DOUBT, DO NOT ASSIGN A B-LABEL.\n\nIf unsure whether an email is NEEDS-INFO or QUOTE → set b_label to null.\nThe email will remain tagged as TAG-SYS/Sales only, for human review.\n\nOnly use NEEDS-INFO if ALL THREE are true:\n1. Product category is completely unclear (can't tell if it's apparel, patches, promo, etc.)\n2. No quantity or even a rough range is mentioned\n3. Customer has not referenced any past order or said \"reorder\" / \"same as last time\"\n\nOnly use QUOTE if you are CONFIDENT:\n- Product type is clearly identifiable\n- Customer gave a quantity (even a range like \"50-100\")\n- You could quote with reasonable assumptions\n- Customer mentioned a previous order or said \"same as last time\"\n\nIf only minor details are missing (sizes, colors, exact date) → QUOTE\nIf you're unsure → b_label = null, let human decide\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nMISSING INFO\n━━━━━━━━━━━━━━━━━━━━━━\n\nIf B-label = TAG-SYS/Sales/NEEDS-INFO,\nreturn an array of what is missing.\n\nOtherwise return []\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nCONFIDENCE SCORING\n━━━━━━━━━━━━━━━━━━━━━━\n\na_confidence = how certain you are in the A-label choice\nb_confidence = how certain you are in the B-label choice\n\nScale:\n- 0.90–1.00 → very clear, obvious\n- 0.80–0.89 → confident\n- 0.70–0.79 → reasonable but not perfect\n- < 0.70 → uncertain\n\nWhen unsure between NEEDS-INFO and QUOTE → set b_label to null (no B-label assigned)\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nOUTPUT FORMAT (STRICT)\n━━━━━━━━━━━━━━━━━━━━━━\n\nReturn ONLY this JSON:\n\n{\n  \"skip\": false,\n  \"a_label\": \"TAG-SYS/Sales\",\n  \"a_confidence\": 0.92,\n  \"b_label\": \"TAG-SYS/Sales/QUOTE\",\n  \"b_confidence\": 0.85,\n  \"reason\": \"Short explanation\",\n  \"missing_info\": [],\n  \"next_action\": \"human|draft_email|queue_quote|close_deal|route_cs|none\"\n}\n\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nEMAIL INPUT\n━━━━━━━━━━━━━━━━━━━━━━\n\nSubject:\n{{ $json.Subject }}\n\nFrom:\n{{ $json.From }}\n\nTo:\n{{ $json.To }}\n\nBody snippet:\n{{ $json.snippet || \"\" }}\n\nExisting Gmail labels:\n{{ ($json.labels || []).map(l => l.name) }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "513b66d8-a897-4c7e-96a8-6b4a368d729d",
+      "name": "Classify Email",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        208
+      ],
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get original email from If No Results (FALSE branch feeds to Classify)\nconst itemIndex = $itemIndex;\nconst allEmails = $('If No Results').all();\nconst emailData = allEmails[itemIndex]?.json || {};\n\n// Get AI response from current input\nconst aiInput = $input.item.json;\nlet aiResponse;\n\ntry {\n  // Navigate through OpenAI response structure\n  // Could be: output[0].content[0].text OR message.content OR text OR content\n  let rawOutput = '';\n  \n  if (aiInput.output && aiInput.output[0]?.content?.[0]?.text) {\n    // New OpenAI node structure\n    rawOutput = aiInput.output[0].content[0].text;\n  } else if (aiInput.message?.content) {\n    rawOutput = aiInput.message.content;\n  } else if (aiInput.text) {\n    rawOutput = aiInput.text;\n  } else if (aiInput.content) {\n    rawOutput = aiInput.content;\n  } else {\n    rawOutput = JSON.stringify(aiInput);\n  }\n  \n  // Extract JSON from code blocks if present\n  let jsonStr = rawOutput;\n  const codeBlockMatch = rawOutput.match(/```(?:json)?\\s*([\\s\\S]*?)```/);\n  if (codeBlockMatch) {\n    jsonStr = codeBlockMatch[1].trim();\n  }\n  \n  aiResponse = JSON.parse(jsonStr);\n} catch (e) {\n  aiResponse = {\n    skip: true,\n    reason: 'Failed to parse AI response: ' + e.message,\n    a_label: 'TAG-SYS/Unsure',\n    b_label: null,\n    a_confidence: 0,\n    b_confidence: 0,\n    missing_info: [],\n    next_action: 'human'\n  };\n}\n\n// Normalize skip flag\nif (aiResponse.skip === undefined) {\n  aiResponse.skip = false;\n}\n\n// Validate b_label based on dual confidence\nconst aConf = aiResponse.a_confidence || 0;\nconst bConf = aiResponse.b_confidence || 0;\nif (aConf < 0.70 || bConf < 0.80) {\n  aiResponse.b_label = null;\n}\n\nreturn {\n  json: {\n    ...emailData,\n    ai: aiResponse,\n    source: 'catch-all-recovery'\n  }\n};"
+      },
+      "id": "d2ec39bd-4322-4bac-8461-54cd3c43ad10",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.ai.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9d650955-53ca-4b2b-baf4-1e22f21cf1b7",
+      "name": "If Skip",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "id": "2e1890d6-04a9-43de-8853-5f110509c3a3",
+      "name": "Get Gmail Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        304
+      ],
+      "webhookId": "d1c99588-c02e-42bc-bd53-c1c918c61d54",
+      "executeOnce": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Map label names to IDs\n// Get ALL email items from If Skip's FALSE output\nconst allEmails = $('If Skip').all();\n// Get ALL Gmail labels from current input\nconst allLabels = $input.all().map(i => i.json);\n\n// Build label name to ID map\nconst nameToId = new Map(allLabels.map(l => [l.name, l.id]));\n\nconst results = [];\n\nfor (const emailItem of allEmails) {\n  const emailData = emailItem.json;\n  const ai = emailData.ai;\n  \n  const wantedNames = [\n    ai.a_label,\n    ai.b_label\n  ].filter(l => l && l !== 'null' && l !== null);\n  \n  const wantedIds = wantedNames\n    .map(n => nameToId.get(n))\n    .filter(Boolean);\n  \n  if (wantedIds.length !== wantedNames.length) {\n    const missing = wantedNames.filter(n => !nameToId.get(n));\n    // Log warning but don't fail - continue with what we have\n    console.log('Missing Gmail labels: ' + missing.join(', '));\n  }\n  \n  results.push({\n    json: {\n      messageId: emailData.id,\n      labelIds: wantedIds,\n      wantedNames: wantedNames,\n      emailData: emailData,\n      ai: ai\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "08c67106-c177-41e7-bc46-735459e2d50f",
+      "name": "Map Label Names to IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.messageId }}",
+        "labelIds": "={{ $json.labelIds }}"
+      },
+      "id": "89df83f3-1075-43d3-a53e-a372a87aeb7d",
+      "name": "Apply Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        304
+      ],
+      "webhookId": "4caf31f1-50d0-44df-aec7-6e69654b8e8f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+          "mode": "list",
+          "cachedResultName": "AI TRIAGE AUDIT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 146856779,
+          "mode": "list",
+          "cachedResultName": "Catch-All Recovery",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit#gid=146856779"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ new Date().toISOString() }}",
+            "message_id": "={{ $json.message_id }}",
+            "thread_id": "=={{ $('Map Label Names to IDs').item.json.emailData.threadId }}",
+            "from_email": "={{ $json.from_email }}",
+            "subject": "={{ $json.subject }}",
+            "source": "={{ $json.source }}",
+            "applied": "TRUE",
+            "from_domain": "={{ $json.from_domain }}",
+            "snippet": "={{ $json.snippet }}",
+            "a_label": "={{ $json.a_label }}",
+            "b_label": "={{ $json.b_label }}",
+            "confidence": "={{ $json.confidence }}",
+            "reason": "={{ $json.reason }}",
+            "existing_labels": "={{ $json.existing_labels }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "from_email",
+              "displayName": "from_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "from_domain",
+              "displayName": "from_domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "a_label",
+              "displayName": "a_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "b_label",
+              "displayName": "b_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "existing_labels",
+              "displayName": "existing_labels",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "applied",
+              "displayName": "applied",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "081726e7-5b30-44b9-952a-ac7ab8480c56",
+      "name": "Log Applied to Audit",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+          "mode": "list",
+          "cachedResultName": "AI TRIAGE AUDIT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Catch-All Recovery",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ new Date().toISOString() }}",
+            "message_id": "={{ $json.id }}",
+            "thread_id": "={{ $json.threadId }}",
+            "from_email": "={{ $json.From }}",
+            "from_domain": "={{ ($json.From || '').match(/@([^>\\s]+)/)?.[1] || '' }}",
+            "subject": "={{ $json.Subject }}",
+            "snippet": "={{ $json.snippet || '' }}",
+            "a_label": "={{ $json.ai.a_label || '' }}",
+            "b_label": "={{ $json.ai.b_label || '' }}",
+            "confidence": "={{ $json.ai.confidence || '' }}",
+            "reason": "={{ $json.ai.reason || 'SKIPPED' }}",
+            "existing_labels": "={{ ($json.labels || []).map(l => l.name).join(', ') }}",
+            "source": "catch-all-recovery",
+            "applied": "SKIPPED"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string"
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "type": "string"
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "type": "string"
+            },
+            {
+              "id": "from_email",
+              "displayName": "from_email",
+              "type": "string"
+            },
+            {
+              "id": "from_domain",
+              "displayName": "from_domain",
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "type": "string"
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "type": "string"
+            },
+            {
+              "id": "a_label",
+              "displayName": "a_label",
+              "type": "string"
+            },
+            {
+              "id": "b_label",
+              "displayName": "b_label",
+              "type": "string"
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "type": "string"
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "type": "string"
+            },
+            {
+              "id": "existing_labels",
+              "displayName": "existing_labels",
+              "type": "string"
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "type": "string"
+            },
+            {
+              "id": "applied",
+              "displayName": "applied",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "37abb0ed-e621-4700-839f-91277cda935a",
+      "name": "Log Skipped to Audit",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { message: 'No missed emails found. System is clean.' } }];"
+      },
+      "id": "4dc5700c-1c8b-4460-81e8-d427ef8a7aed",
+      "name": "No Results Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Format data for audit logging\nconst data = $('Map Label Names to IDs').item.json;\n\nreturn {\n  json: {\n    timestamp: new Date().toISOString(),\n    message_id: data.messageId,\n    thread_id: data.emailData.threadId,\n    from_email: data.emailData.From,\n    from_domain: (data.emailData.From || '').match(/@([^>\\s]+)/)?.[1] || '',\n    subject: data.emailData.Subject,\n    snippet: data.emailData.snippet || '',\n    a_label: data.ai.a_label || '',\n    b_label: data.ai.b_label || '',\n    confidence: data.ai.a_confidence || '',\n    reason: data.ai.reason || '',\n    existing_labels: (data.emailData.labels || []).map(l => l.name).join(', '),\n    source: 'catch-all-recovery',\n    applied: 'TRUE'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        304
+      ],
+      "id": "0355ca8a-c7d8-4788-8a15-66fe081edfe8",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "## CATCH ALL - MISSED EMAIL INQUIRY\n**docs**  [Guide]loom.com/share/9ac99ec4b883416b9e7fd4a6eef334fc?from_recorder=1&focus_title=1",
+        "height": 224,
+        "width": 752
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -240
+      ],
+      "id": "541834e6-e648-4f6a-ac84-d55308a09e33",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -912,
+        112
+      ],
+      "id": "84c78723-f460-4d9b-b823-77e08abe6a37",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Search Missed Emails": {
+      "main": [
+        [
+          {
+            "node": "Safety Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Safety Filter": {
+      "main": [
+        [
+          {
+            "node": "If No Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If No Results": {
+      "main": [
+        [
+          {
+            "node": "No Results Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Classify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Email": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "If Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Skip": {
+      "main": [
+        [
+          {
+            "node": "Log Skipped to Audit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Gmail Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Gmail Labels": {
+      "main": [
+        [
+          {
+            "node": "Map Label Names to IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Label Names to IDs": {
+      "main": [
+        [
+          {
+            "node": "Apply Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Labels": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Log Applied to Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search Missed Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "dad4c8ee-6ad8-4394-8885-22ff5c5c9a58",
+  "meta": {
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "ObGIqz3s2agBncih4osDo",
+  "tags": []
+}

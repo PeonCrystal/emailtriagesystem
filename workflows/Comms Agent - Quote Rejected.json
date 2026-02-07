@@ -1,0 +1,575 @@
+{
+  "name": "Comms Agent - Quote Rejected",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "person",
+        "operation": "search",
+        "limit": 1,
+        "term": "={{ $json.from.value[0].address }}",
+        "additionalFields": {}
+      },
+      "name": "Find Pipedrive Person",
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        -16
+      ],
+      "id": "776f830d-4c18-47ee-8ee6-a45511e9a362",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dealId": "={{ $('HTTP Request').item.json.data[0].id }}",
+        "updateFields": {
+          "lost_reason": "=Rejection Reason: {{ $('Message a model').item.json.message.content.reason }}",
+          "status": "lost"
+        }
+      },
+      "name": "Update Deal to 'Lost'",
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -80
+      ],
+      "id": "4e944b9b-6fb6-490b-b914-ccb48f3b3728",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "note",
+        "content": "=Final attempt message sent: \n---------------------------\n\n{{ $('Message a model').item.json.message.content.email_body }}",
+        "additionalFields": {
+          "deal_id": "={{ $('Update Deal to \\'Lost\\'').item.json.id }}"
+        }
+      },
+      "name": "Add Note to Deal",
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        -80
+      ],
+      "id": "b06ca699-f500-49f8-8b18-f1b286d22bc7",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert sales agent. Analyze the following email where a client is rejecting a quote. Your task is to determine the primary reason for the rejection based on these categories: `Price`, `Timeline`, `Competition`, `Changed Mind`, `Other`.\n\nThen draft a reply trying one last time to see if there's anything we can do to change their mind. It'll be up to the sales reps to decide if it's something we can do, so offer no promises. Address their specific concerns in your message and output only the body of the email, well formatted.\n\n- Please make sure to add HTML so everything is properly spaced.\n+ Respond ONLY in valid JSON with two fields: \"reason\" and \"email_body\". The value of \"reason\" must be one of: Price, Timeline, Competition, Changed Mind, Other. The value of \"email_body\" must be a well-formatted HTML email body. Do not include markdown or any other text outside this JSON.\n",
+              "role": "system"
+            },
+            {
+              "content": "=Client Email Content:\n{{ $json.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        512,
+        -80
+      ],
+      "id": "5e0bd1d7-7fb4-4532-b2a0-d11506ee255a",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $('Loop Over Items').item.json.id }}",
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        288,
+        -80
+      ],
+      "id": "3cdd1910-3163-4dee-a149-0edb20cff8d9",
+      "name": "Get a message",
+      "webhookId": "8ef3dab1-ccce-47b0-967d-f31323dfe815",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1472,
+        64
+      ],
+      "id": "015d2f05-0e10-4a76-8621-4c580182f090",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 10,
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "Label_6620902005591924255"
+          ],
+          "q": "is:unread "
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1248,
+        64
+      ],
+      "id": "1abe2811-0ad1-4794-85cf-e1703c0cea8d",
+      "name": "Gmail Trigger",
+      "webhookId": "654950e4-054a-486d-a5f8-45ab8ce89a05",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Quote Rejected Flow\n\n**Double click** to edit me. [Guide](https://www.loom.com/share/eebf8aed89d248d6aba14611a4ec3c20)"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1488,
+        -336
+      ],
+      "id": "fe679982-bcb0-4e85-9d8a-5e77d5cee380",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1024,
+        64
+      ],
+      "id": "1fae7fff-4544-4bcd-aacb-c835c35fbebf",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Get a message').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1856,
+        16
+      ],
+      "id": "4a8168e8-6d5a-4008-8e56-658a9204b1c0",
+      "name": "Mark a message as read",
+      "webhookId": "ec134dfb-5c16-48ee-b9ad-327b75468f9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "01044f26-feaa-465a-9986-df42cc775e0d",
+              "leftValue": "={{ $json.data[0].id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        -16
+      ],
+      "id": "8b72f099-1f89-420b-805d-9c7e9e1ff579",
+      "name": "Deal Or No Deal?",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Loop Over Items').item.json.threadId }}",
+        "labelIds": [
+          "Label_6620902005591924255"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1712,
+        16
+      ],
+      "id": "4a649096-a32b-46b2-a054-0dd17d9ae237",
+      "name": "Remove label from thread",
+      "webhookId": "5c823715-6e13-4f61-98c1-5eb85b1ebdd1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://dadsprinting.pipedrive.com/api/v2/deals",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "person_id",
+              "value": "={{ $('Find Pipedrive Person').item.json.id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-token",
+              "value": "86eda7172621e731a5c482c52306d395ba35e193"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -368,
+        -16
+      ],
+      "id": "1401a7f7-fddc-432e-a5ea-a482ecfb6e24",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Get a message').item.json.id }}",
+        "message": "={{ $('Message a model').item.json.message.content.email_body }}\n\n\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n<title></title>\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap\" rel=\"stylesheet\">\n</head>\n\n<body>\n<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" class=\"main01\" style=\"border-collapse: collapse; margin: 0; border:none; padding:0;\">\n  <tbody>\n    <tr>\n      <td valign=\"top\" style=\"border:none;\">\n        <table width=\"330\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" align=\"left\" style=\"max-width:330px;border-collapse: collapse; margin: 0; border:none; padding:0;\">\n          <tbody>\n            <tr>\n              <td valign=\"top\" align=\"left\" style=\"border:none;\">\n                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"border-collapse: collapse; margin: 0; border:none; padding:0;\">\n                  <tbody>\n                    <tr>\n                      <td valign=\"middle\" width=\"100\" align=\"left\" style=\"line-height:1px; margin:0px;border:none;\">\n                        <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/Headshot.png\" alt=\"\" width=\"100\" height=\"100\" style=\"width:100px; height:100px; border:none;\">\n                      </td>\n                      <td width=\"8\" style=\"font-size:1px; line-height:1px;border:none;\" valign=\"top\">&nbsp;</td>\n                      <td valign=\"middle\" align=\"left\" style=\"padding-left: 8px; border-left: 1px solid #aa0000;\">\n                        <table align=\"left\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"border-collapse: collapse; margin: 0;\">\n                          <tbody>\n                            <tr>\n                              <td align=\"left\" valign=\"middle\" style=\"border:none;\">\n                                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"text-align:left;border-collapse: collapse; margin: 0;\">\n                                  <tbody>\n                                    <tr>\n                                      <td colspan=\"2\" valign=\"middle\" align=\"left\" style=\"line-height: 1px; border-bottom: 1px solid #aa0000; padding-bottom: 5px;\">\n                                        <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                                          <tbody>\n                                            <tr>\n                                              <td colspan=\"2\" valign=\"top\" align=\"left\" style=\"font-family: Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif'; font-size:13pt; line-height:120%; color:#aa0000; text-align:left; border:none;\">\n                                                <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/sign.png\" alt=\"icon\" width=\"120\" height=\"\" style=\"border:none; width:120px; height:px;\"><br>\n                                                <strong style=\"text-transform: uppercase;\">Adam Lando</strong>\n                                              </td>\n                                            </tr>\n                                          </tbody>\n                                        </table>\n                                      </td>\n                                    </tr>\n                                    <tr>\n                                      <td colspan=\"2\" height=\"10\" style=\"font-size:1px; line-height:1px;border:none;\"></td>\n                                    </tr>\n                                    <tr>\n                                      <td width=\"22\" style=\"line-height:1px;border:none;\">\n                                        <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/call.png\" alt=\"icon\" width=\"14\" height=\"14\" style=\"border:none; width:14px; height:14px;\">\n                                      </td>\n                                      <td valign=\"middle\" align=\"left\" style=\"font-family:  Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif'; font-size:9pt; line-height:100%; color:#000000; text-align:left; font-weight:normal;border:none;\">\n                                        <a href=\"tel:1-833-879-3237 EXT 700\" target=\"_blank\" style=\"color:#000000; text-decoration:none !important; text-decoration-color: #FFFFFF; font-size:9pt;\">\n                                          <span style=\"color:rgb(0,0,0);\">1-833-879-3237 EXT 700</span>\n                                        </a>\n                                      </td>\n                                    </tr>\n                                    <tr>\n                                      <td colspan=\"2\" height=\"6\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n                                    </tr>\n                                    <tr>\n                                      <td width=\"22\" style=\"line-height:1px;border:none;\">\n                                        <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/email.png\" alt=\"icon\" width=\"14\" height=\"14\" style=\"border:none; width:14px; height:12px;\">\n                                      </td>\n                                      <td valign=\"middle\" align=\"left\" style=\"font-family:  Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif'; font-size:9pt; line-height:100%; color:#000000; text-align:left; font-weight:normal;border:none;\">\n                                        <a href=\"mailto:info@dadsprinting.com\" target=\"_blank\" style=\"color:#000000; text-decoration:none !important; text-decoration-color: #FFFFFF; font-size:9pt;\">\n                                          <span style=\"color:rgb(0,0,0);\">info@dadsprinting.com</span>\n                                        </a>\n                                      </td>\n                                    </tr>\n                                  </tbody>\n                                </table>\n                              </td>\n                            </tr>\n                          </tbody>\n                        </table>\n                      </td>\n                    </tr>\n                  </tbody>\n                </table>\n              </td>\n            </tr>\n            <tr>\n              <td height=\"10\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n            </tr>\n            <tr>\n              <td valign=\"middle\" align=\"left\" style=\"line-height: 1px; border: 1.5px solid #aa0000;\">\n                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                  <tbody>\n                    <tr>\n                      <td valign=\"middle\" width=\"100\" align=\"left\" style=\"line-height:1px; margin:0px;border:none;padding: 8px;\">\n                        <a href=\"#\" target=\"_blank\">\n                          <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/logo.png\" alt=\"\" width=\"100\" height=\"\" style=\"width:100px; height:px; border:none;\">\n                        </a>\n                      </td>\n                      <td valign=\"recipient\" align=\"right\" width=\"160\" style=\"line-height: 1px;\">\n                        <p style=\"padding: 0px; margin: 0px 0px 0px 0px; line-height: 1px; padding: 8px;\">\n                          <a href=\"https://calendly.com/dads-printing/appointment?month=2024-06\" target=\"_blank\">\n                            <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/sbtn3.png\" alt=\"\" width=\"170\" height=\"22\" style=\"height:22px; width:170px; border:none; display: inline-block;\" border=\"0\">\n                          </a>\n                        </p>\n                      </td>\n                    </tr>\n                  </tbody>\n                </table>\n              </td>\n            </tr>\n            <tr>\n              <td height=\"8\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n            </tr>\n            <tr>\n              <td valign=\"middle\" align=\"left\" style=\"line-height: 1px;\">\n                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                  <tbody>\n                    <tr>\n                      <td valign=\"top\" colspan=\"2\" align=\"justify\" style=\"font-family: Ubuntu, Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif';  font-size:6pt; line-height:120%; color:#808080; text-align:justify; font-weight:normal;\">\n                        The content of this email is confidential and intended for the recipient specified in message only. It is strictly forbidden to share any part of this message with any third party, without a written consent of the sender. If you received this message by mistake, please reply to this message and follow with its deletion, so that we can ensure such a mistake does not occur in the future.\n                      </td>\n                    </tr>\n                    <tr>\n                      <td height=\"4\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n                    </tr>\n                    <tr>\n                      <td valign=\"right\" colspan=\"2\" align=\"right\" style=\"font-family: Ubuntu, Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif';  font-size:8pt; line-height:120%; color:#808080; text-align:right; font-weight:normal;\">\n                        <a href=\"https://www.dadsprinting.com/unsubscribe/\" target=\"_blank\" style=\"text-decoration: none; color:#808080; text-decoration:none !important;\">\n                          <span>Unsubscribe</span>\n                        </a>\n                      </td>\n                    </tr>\n                  </tbody>\n                </table>\n              </td>\n            </tr>\n          </tbody>\n        </table>\n      </td>\n    </tr>\n  </tbody>\n</table>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1088,
+        -80
+      ],
+      "id": "e8200022-edfd-4a04-bf6d-5ff1c9ce8347",
+      "name": "Send Final Attempt",
+      "webhookId": "930a090d-949c-4f33-965d-9d518c4d133b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Loop Over Items').item.json.threadId }}",
+        "labelIds": [
+          "Label_5719591592693262311",
+          "Label_6992024041184135133",
+          "Label_2227810883237687599",
+          "Label_4390932624994723543",
+          "Label_7957527206812753254"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1520,
+        16
+      ],
+      "id": "04ccbe58-1165-412e-b01b-19fda0655534",
+      "name": "Remove other labels",
+      "webhookId": "5c823715-6e13-4f61-98c1-5eb85b1ebdd1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Find Pipedrive Person": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Deal to 'Lost'": {
+      "main": [
+        [
+          {
+            "node": "Send Final Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Note to Deal": {
+      "main": [
+        [
+          {
+            "node": "Remove other labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Update Deal to 'Lost'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Gmail Trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Find Pipedrive Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark a message as read": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deal Or No Deal?": {
+      "main": [
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove other labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from thread": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Deal Or No Deal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Final Attempt": {
+      "main": [
+        [
+          {
+            "node": "Add Note to Deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove other labels": {
+      "main": [
+        [
+          {
+            "node": "Remove label from thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ODmvYJ8wvhvQCqKJ"
+  },
+  "versionId": "78ba3fee-5399-4e9e-b709-7f57a72ffd4d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "SR5UiRlWwe3FiRxg",
+  "tags": [
+    {
+      "updatedAt": "2025-09-18T21:07:48.004Z",
+      "createdAt": "2025-09-18T21:07:48.004Z",
+      "id": "la3xBPTfmFJpCXec",
+      "name": "COMMS"
+    },
+    {
+      "updatedAt": "2025-12-08T00:46:38.055Z",
+      "createdAt": "2025-12-08T00:46:38.055Z",
+      "id": "omlUrfq9lKY1K9wm",
+      "name": "Sales"
+    }
+  ]
+}

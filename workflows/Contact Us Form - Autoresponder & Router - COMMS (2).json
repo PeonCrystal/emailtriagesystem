@@ -1,0 +1,724 @@
+{
+  "name": "Contact Us Form - Autoresponder & Router - COMMS",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_824305247270003185"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        288
+      ],
+      "id": "48a14d78-35f4-4b14-9a2e-2ed572af8236",
+      "name": "Remove Contactformlabel2",
+      "webhookId": "2c04b93f-6698-48c7-8f4a-777e2682040d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "delete",
+        "threadId": "={{ $('Dedup by threadId').item.json.threadId }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1152,
+        528
+      ],
+      "id": "2ef81829-d262-412a-afeb-c73dfd969534",
+      "name": "Delete a thread",
+      "webhookId": "704daa7a-9386-4da0-89e1-5df8b5fa4485",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "=={{ $json.threadId }}",
+        "labelIds": [
+          "Label_824305247270003185"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        992,
+        528
+      ],
+      "id": "b606e022-ff62-4ede-bd6e-bb2c7b8c1842",
+      "name": "Remove label from thread",
+      "webhookId": "b87f7673-7626-452c-88dc-353e83b11579",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Get many messages').item.json.threadId }}",
+        "labelIds": [
+          "Label_6992024041184135133"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1248,
+        128
+      ],
+      "id": "2398cdd3-8ed6-4846-b72c-2ea0353b3fdf",
+      "name": "Adds NEEDSINFOLabel",
+      "webhookId": "7008906d-5ec9-4f07-8d4b-8c047d3e585b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "dealId": "={{ $('Search a deal').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        528
+      ],
+      "id": "8264cc56-821f-4d57-8bb5-f4bdf2d0c0d8",
+      "name": "Delete a deal",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "operation": "delete",
+        "personId": "={{ $json.person.id }}"
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        528
+      ],
+      "id": "279bc47e-1e04-48e8-94d3-74fb9f0903ed",
+      "name": "Delete a person",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "term": "Contact Form Lead (Website)",
+        "limit": 1,
+        "additionalFields": {
+          "personId": "={{ $json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        528
+      ],
+      "id": "a5fcb697-ce95-4175-b114-ea169ffc0c76",
+      "name": "Search a deal",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "Label_824305247270003185"
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -880,
+        288
+      ],
+      "id": "1fce6de7-40a1-4d1b-807b-1e8dc40f8279",
+      "name": "Get many messages",
+      "webhookId": "ae3853c0-c54b-47af-b11b-861baea4da9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "operation": "search",
+        "term": "=={{ $('Get many messages').item.json.from.value[0].address }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        528
+      ],
+      "id": "07292b40-eaaa-4c7f-8863-a1f830688c18",
+      "name": "Search a person",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Dedup by threadId').item.json.threadId }}",
+        "labelIds": [
+          "Label_1540280282738845396"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1248,
+        288
+      ],
+      "id": "2db43d41-5c88-41f5-8b14-75a57ef94075",
+      "name": "Add To CS Thread (COMMS-CS)",
+      "webhookId": "1cce52e7-5a7f-49c8-9f35-d67e28f1c714",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "orderinquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a0990ef8-1c22-4ade-9271-2f053e784a9e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order Inquiry"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "42799e8d-e5cb-41d8-b1d6-437842a19f5a",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "customerservice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Customer Service"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9604591c-d707-499f-be6e-8d4911468727",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "spam",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Spam"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        784,
+        272
+      ],
+      "id": "13814e2a-d67e-4524-a43c-c21e5c990e4b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You job is to analyze the sentiment of an email to us from a contact us page on our site.  They could be inquiring about multiple things, and it is your job to determine which this falls under:\n\n1. orderinquiry\n2. customerservice\n3. spam\n\norderinquiry means they are looking for information on a product or to potentially order. \n\ncustomerservice means they were unhappy with a recent experience and they have a complaint or unresolved issue. \n\nspam means the inquiry is spam, or possibly an outbound sales attempt on their part, it would also cover any random text, different languages and things that look malicious. \n\nDepending on the content of their email that is going into the input, please indicate which of the 3 you think this will fall under. Please indicate only the single word as your output that each option is represented by. IE: If you think it falls under a good experience, it's marked as: happy\n\nPS: If the customer is happy and wants to place an order or wants product info, output: orderinquiry "
+            },
+            {
+              "content": "={{ $('Get many messages').item.json.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        384,
+        288
+      ],
+      "id": "8f2840bf-4387-4202-98c1-6d0951982bda",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nconst out = [];\n\nfor (const item of $input.all()) {\n  const t = item.json.threadId;\n  if (!t) continue;\n  if (seen.has(t)) continue;\n  seen.add(t);\n  out.push(item);\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        288
+      ],
+      "id": "d98c90bd-5af1-4818-9486-6d24ebf99f39",
+      "name": "Dedup by threadId"
+    },
+    {
+      "parameters": {
+        "content": "## Contact Us Form - Autoresponder & Router - COMMS\n\nGOAL: To automate replies to followup emails based off a tag that is automatically assigned with a gmal rule (setup in gmail to apply (label:comms---post-followup) - to emails that come back with the \"Following up with on your Dad's Printing order).\n\nThe tag being assigned triggers an analysis of the email response and does 1 of the 3 based on the sentiment of the response (judged by openai module):\n\n1. orderinquiry - adds NEEDS-INFO and triggers [This Workflow](https://n8n.srv1001839.hstgr.cloud/workflow/TJwwpENcUlhMRaDe)\n2. cs - adds CS Tag to thread (keeps unread) and triggers [This Workflow](https://n8n.srv1001839.hstgr.cloud/workflow/3oJeKPMz0P5NefA0)\n3. spam - marks email read deletes contact and deal\n\nThis essentially makes replying to these a non touch process and something that is truly automated. \n\nVideo: https://www.loom.com/share/e0de2185c73742f8815809496e1325f3?from_recorder=1&focus_title=1\n\nBuilt by Adam Lando Dec 19 2025\n",
+        "height": 416,
+        "width": 784
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        -288
+      ],
+      "id": "128c8bbe-2709-49ea-b943-2839e732ed96",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.id }}",
+                    "rightValue": "={{ $json.messages[0].threadId }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "913eec91-6e4e-4677-af78-365eb397a418"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Is First Message?1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e4731fb9-c6ff-4c0a-855b-f58c3b7a5d71",
+                    "leftValue": "={{ $json.id }}",
+                    "rightValue": "={{ $json.threadId }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not First"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        304
+      ],
+      "id": "b20d10d9-222a-48e4-8e7a-050239b1b6f4",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Get many messages').item.json.threadId }}",
+        "labelIds": [
+          "Label_824305247270003185",
+          "Label_3917960758757248870",
+          "Label_4445720407385800790"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        288
+      ],
+      "id": "658a298e-271c-4bcf-8496-4ad1d4240d40",
+      "name": "Remove other labels",
+      "webhookId": "b87f7673-7626-452c-88dc-353e83b11579",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Get many messages').item.json.threadId }}",
+        "labelIds": [
+          "Label_824305247270003185",
+          "Label_6620902005591924255"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        128
+      ],
+      "id": "1f1a5656-709d-484d-b707-b76d35a444c2",
+      "name": "Remove other labels1",
+      "webhookId": "b87f7673-7626-452c-88dc-353e83b11579",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "e1b93242-59cd-48e0-ab9c-3b0756350ace",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1136,
+        288
+      ],
+      "id": "f91ce767-f11a-4718-9e0a-c6dbf06d3c60",
+      "name": "Webhook",
+      "webhookId": "e1b93242-59cd-48e0-ab9c-3b0756350ace"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Remove label from thread": {
+      "main": [
+        [
+          {
+            "node": "Delete a thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Contactformlabel2": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a thread": {
+      "main": [
+        [
+          {
+            "node": "Search a person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a person": {
+      "main": [
+        [
+          {
+            "node": "Delete a deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search a deal": {
+      "main": [
+        [
+          {
+            "node": "Delete a person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Dedup by threadId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search a person": {
+      "main": [
+        [
+          {
+            "node": "Search a deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Remove other labels1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove other labels",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove label from thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup by threadId": {
+      "main": [
+        [
+          {
+            "node": "Remove Contactformlabel2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Remove other labels": {
+      "main": [
+        [
+          {
+            "node": "Add To CS Thread (COMMS-CS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove other labels1": {
+      "main": [
+        [
+          {
+            "node": "Adds NEEDSINFOLabel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a9eb1c01-533f-4183-b2fb-48e8610119e9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "NuItMNJNkrqQQ6EP",
+  "tags": [
+    {
+      "updatedAt": "2025-09-18T21:07:48.004Z",
+      "createdAt": "2025-09-18T21:07:48.004Z",
+      "id": "la3xBPTfmFJpCXec",
+      "name": "COMMS"
+    }
+  ]
+}

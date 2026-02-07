@@ -1,0 +1,429 @@
+{
+  "name": "Invoice Paid Auto Forwarder",
+  "nodes": [
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "doc_number",
+              "value": "={{ $json[\"Subject\"].match(/\\d+/)?.[0] ?? '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -32
+      ],
+      "id": "a9af04e6-64de-4b66-ac33-9bed624fcf04",
+      "name": "Parse Invoice Number"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "term": "={{ $json.doc_number }}",
+        "exactMatch": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        352,
+        -32
+      ],
+      "id": "6e30d95f-4deb-487f-8c3d-14c756cd5313",
+      "name": "Search a deal",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.owner.id }}",
+                    "rightValue": 11626995,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "63eb8885-889d-4686-88d6-f35ea5b5907e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Joel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "77c67892-c081-4393-bc9d-0621cf7bcfbb",
+                    "leftValue": "={{ $json.owner.id }}",
+                    "rightValue": "=23381379",
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Kirsty"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        576,
+        -32
+      ],
+      "id": "fce688ba-88b5-4de8-9e9d-fc8ad63c868a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "c9a4213a-a152-4e3b-8533-7adf85979dbf",
+      "name": "Get a message",
+      "webhookId": "5f164b60-57b9-4274-ab41-90f0ba673a96",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Get a message').item.json.id }}",
+        "message": "={{ $('Get a message').item.json.snippet }}",
+        "options": {
+          "ccList": "sales@dadsprinting.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        832,
+        -144
+      ],
+      "id": "5fad4681-3524-4f7d-9812-7a9f705eb874",
+      "name": "Send to Joel",
+      "webhookId": "16f312b9-6bfa-4cc9-bcce-9ac219cb35df",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "sales2@dadsprinting.com",
+        "subject": "=FWD: {{ $('Get a message').item.json.Subject }}",
+        "message": "={{ $('Get a message').item.json.snippet }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        832,
+        80
+      ],
+      "id": "059723e9-52f2-4068-8d6f-08ffbd558cdf",
+      "name": "Send to Kirsty",
+      "webhookId": "16f312b9-6bfa-4cc9-bcce-9ac219cb35df",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Invoice Paid auto forwarder \n\nBuilt to autoforward invoices to the salespeople.\n\nhttps://www.loom.com/share/1f71f6f023104372bb113e4c216970fb",
+        "height": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -304
+      ],
+      "id": "6afa36f5-0c6c-4133-ab79-dd4873377f40",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $('Get a message').item.json.id }}",
+        "labelIds": "=Label_427355719247324158"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1152,
+        -32
+      ],
+      "id": "d23805af-bdbb-4a2f-a545-8a72dbf3e001",
+      "name": "Remove label from message",
+      "webhookId": "7dc9c80b-7564-4c45-b7fe-6a8c021384ff",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -576,
+        -16
+      ],
+      "id": "08f02d44-f5bb-4e61-9e3a-33d53bbc1033",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "labelIds": [
+            "Label_427355719247324158"
+          ],
+          "q": "quickbooks",
+          "readStatus": "unread"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        -16
+      ],
+      "id": "5dc17248-d400-4a75-85d3-ab24e29ac3be",
+      "name": "Get many messages",
+      "webhookId": "b4945170-8d13-4fc0-b903-693d1d410208",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        -32
+      ],
+      "id": "ca430b54-1814-4c69-a150-493ee9a3df5d",
+      "name": "Mark a message as read",
+      "webhookId": "922a6e3d-8a82-42d1-9f0f-f555c7b1fd89",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parse Invoice Number": {
+      "main": [
+        [
+          {
+            "node": "Search a deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search a deal": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send to Joel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send to Kirsty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove label from message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Parse Invoice Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Joel": {
+      "main": [
+        [
+          {
+            "node": "Remove label from message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Kirsty": {
+      "main": [
+        [
+          {
+            "node": "Remove label from message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from message": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cbbc4d4e-ab44-4256-a9be-ee7a8c29f142",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "KeopxA2gvm3ORq1C",
+  "tags": [
+    {
+      "updatedAt": "2025-11-16T00:26:22.434Z",
+      "createdAt": "2025-11-16T00:26:22.434Z",
+      "id": "dJGSllKQRCQuCvjQ",
+      "name": "VA / for info@"
+    },
+    {
+      "updatedAt": "2025-12-08T00:46:38.055Z",
+      "createdAt": "2025-12-08T00:46:38.055Z",
+      "id": "omlUrfq9lKY1K9wm",
+      "name": "Sales"
+    }
+  ]
+}

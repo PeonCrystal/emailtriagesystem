@@ -1,0 +1,1393 @@
+{
+  "name": "Comms Agent - Needs Info to Quote",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "44c8eeef-9471-4865-9000-c5e775e5650d",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        -336
+      ],
+      "id": "b1deeee8-2ca5-4ba4-8687-b527c2523364",
+      "name": "IF person exists"
+    },
+    {
+      "parameters": {
+        "title": "={{ $('Get a message').item.json.from.value[0].name }} - {{ $('Get a message').item.json.subject }}",
+        "associateWith": "person",
+        "person_id": "={{ $('Search a person').item.json.id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        928,
+        48
+      ],
+      "id": "acec7dcc-ce34-419c-b064-bb243c4f7313",
+      "name": "Create a deal",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "name": "={{ $('Get many messages').item.json.from.value?.[0]?.name ? \n   $('Get many messages').item.json.from.value[0].name.toSentenceCase() : \n   $('Get many messages').item.json.from.value[0].address.split('@')[0].toSentenceCase() \n}}",
+        "additionalFields": {
+          "email": [
+            "={{ $('Get many messages').item.json.from.value[0].address }}"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        704,
+        112
+      ],
+      "id": "db28637b-d7d6-4971-ac34-3fefdb569399",
+      "name": "Create a person",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Get a message').item.json.threadId }}",
+        "labelIds": [
+          "Label_4247214787040416958"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4000,
+        -368
+      ],
+      "id": "966dc2b5-d7df-4676-8b92-edb7400601c6",
+      "name": "Add label to thread",
+      "webhookId": "2e0bb0b4-0362-42ec-931f-244cb9e4b099",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Get a message').item.json.threadId }}\n",
+        "labelIds": [
+          "Label_6992024041184135133",
+          "Label_6620902005591924255",
+          "Label_2227810883237687599",
+          "Label_5719591592693262311",
+          "Label_1540280282738845396"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4224,
+        -80
+      ],
+      "id": "17fb644b-b8e9-4bd4-b45e-fb0e2229249e",
+      "name": "Remove label from thread",
+      "webhookId": "124c9ccd-89cc-43dc-9c04-4c7f6e1a7631",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Get a message').item.json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.choices[0].message.content }}\n<br>\n<br>\n\n<br>\n\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n<title></title>\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap\" rel=\"stylesheet\">\n</head>\n\n<body>\n<br>\n<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" class=\"main01\" style=\"border-collapse: collapse; margin: 0; border:none; padding:0;\">\n  <tbody>\n    <tr>\n      <td valign=\"top\" style=\"border:none;\">\n        <table width=\"330\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" align=\"left\" style=\"max-width:330px;border-collapse: collapse; margin: 0; border:none; padding:0;\">\n          <tbody>\n            <tr>\n              <td valign=\"top\" align=\"left\" style=\"border:none;\">\n                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"border-collapse: collapse; margin: 0; border:none; padding:0;\">\n                  <tbody>\n                    <tr>\n                      <td valign=\"middle\" width=\"100\" align=\"left\" style=\"line-height:1px; margin:0px;border:none;\">\n                        <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/Headshot.png\" alt=\"\" width=\"100\" height=\"100\" style=\"width:100px; height:100px; border:none;\">\n                      </td>\n                      <td width=\"8\" style=\"font-size:1px; line-height:1px;border:none;\" valign=\"top\">&nbsp;</td>\n                      <td valign=\"middle\" align=\"left\" style=\"padding-left: 8px; border-left: 1px solid #aa0000;\">\n                        <table align=\"left\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"border-collapse: collapse; margin: 0;\">\n                          <tbody>\n                            <tr>\n                              <td align=\"left\" valign=\"middle\" style=\"border:none;\">\n                                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"text-align:left;border-collapse: collapse; margin: 0;\">\n                                  <tbody>\n                                    <tr>\n                                      <td colspan=\"2\" valign=\"middle\" align=\"left\" style=\"line-height: 1px; border-bottom: 1px solid #aa0000; padding-bottom: 5px;\">\n                                        <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                                          <tbody>\n                                            <tr>\n                                              <td colspan=\"2\" valign=\"top\" align=\"left\" style=\"font-family: Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif'; font-size:13pt; line-height:120%; color:#aa0000; text-align:left; border:none;\">\n                                                <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/sign.png\" alt=\"icon\" width=\"120\" height=\"\" style=\"border:none; width:120px; height:px;\"><br>\n                                                <strong style=\"text-transform: uppercase;\">Adam Lando</strong>\n                                              </td>\n                                            </tr>\n                                          </tbody>\n                                        </table>\n                                      </td>\n                                    </tr>\n                                    <tr>\n                                      <td colspan=\"2\" height=\"10\" style=\"font-size:1px; line-height:1px;border:none;\"></td>\n                                    </tr>\n                                    <tr>\n                                      <td width=\"22\" style=\"line-height:1px;border:none;\">\n                                        <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/call.png\" alt=\"icon\" width=\"14\" height=\"14\" style=\"border:none; width:14px; height:14px;\">\n                                      </td>\n                                      <td valign=\"middle\" align=\"left\" style=\"font-family:  Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif'; font-size:9pt; line-height:100%; color:#000000; text-align:left; font-weight:normal;border:none;\">\n                                        <a href=\"tel:1-833-879-3237 EXT 700\" target=\"_blank\" style=\"color:#000000; text-decoration:none !important; text-decoration-color: #FFFFFF; font-size:9pt;\">\n                                          <span style=\"color:rgb(0,0,0);\">1-833-879-3237 EXT 700</span>\n                                        </a>\n                                      </td>\n                                    </tr>\n                                    <tr>\n                                      <td colspan=\"2\" height=\"6\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n                                    </tr>\n                                    <tr>\n                                      <td width=\"22\" style=\"line-height:1px;border:none;\">\n                                        <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/email.png\" alt=\"icon\" width=\"14\" height=\"14\" style=\"border:none; width:14px; height:12px;\">\n                                      </td>\n                                      <td valign=\"middle\" align=\"left\" style=\"font-family:  Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif'; font-size:9pt; line-height:100%; color:#000000; text-align:left; font-weight:normal;border:none;\">\n                                        <a href=\"mailto:info@dadsprinting.com\" target=\"_blank\" style=\"color:#000000; text-decoration:none !important; text-decoration-color: #FFFFFF; font-size:9pt;\">\n                                          <span style=\"color:rgb(0,0,0);\">info@dadsprinting.com</span>\n                                        </a>\n                                      </td>\n                                    </tr>\n                                  </tbody>\n                                </table>\n                              </td>\n                            </tr>\n                          </tbody>\n                        </table>\n                      </td>\n                    </tr>\n                  </tbody>\n                </table>\n              </td>\n            </tr>\n            <tr>\n              <td height=\"10\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n            </tr>\n            <tr>\n              <td valign=\"middle\" align=\"left\" style=\"line-height: 1px; border: 1.5px solid #aa0000;\">\n                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                  <tbody>\n                    <tr>\n                      <td valign=\"middle\" width=\"100\" align=\"left\" style=\"line-height:1px; margin:0px;border:none;padding: 8px;\">\n                        <a href=\"#\" target=\"_blank\">\n                          <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/logo.png\" alt=\"\" width=\"100\" height=\"\" style=\"width:100px; height:px; border:none;\">\n                        </a>\n                      </td>\n                      <td valign=\"recipient\" align=\"right\" width=\"160\" style=\"line-height: 1px;\">\n                        <p style=\"padding: 0px; margin: 0px 0px 0px 0px; line-height: 1px; padding: 8px;\">\n                          <a href=\"https://calendly.com/dads-printing/appointment?month=2024-06\" target=\"_blank\">\n                            <img src=\"https://sigimg.com/host/artbrush/5000/5100/5090.adamlando604/sbtn3.png\" alt=\"\" width=\"170\" height=\"22\" style=\"height:22px; width:170px; border:none; display: inline-block;\" border=\"0\">\n                          </a>\n                        </p>\n                      </td>\n                    </tr>\n                  </tbody>\n                </table>\n              </td>\n            </tr>\n            <tr>\n              <td height=\"8\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n            </tr>\n            <tr>\n              <td valign=\"middle\" align=\"left\" style=\"line-height: 1px;\">\n                <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                  <tbody>\n                    <tr>\n                      <td valign=\"top\" colspan=\"2\" align=\"justify\" style=\"font-family: Ubuntu, Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif';  font-size:6pt; line-height:120%; color:#808080; text-align:justify; font-weight:normal;\">\n                        The content of this email is confidential and intended for the recipient specified in message only. It is strictly forbidden to share any part of this message with any third party, without a written consent of the sender. If you received this message by mistake, please reply to this message and follow with its deletion, so that we can ensure such a mistake does not occur in the future.\n                      </td>\n                    </tr>\n                    <tr>\n                      <td height=\"4\" style=\"font-size:0pt; line-height:1px;border:none;\"></td>\n                    </tr>\n                    <tr>\n                      <td valign=\"right\" colspan=\"2\" align=\"right\" style=\"font-family: Ubuntu, Arial, Gotham, 'Helvetica Neue', Helvetica, 'sans-serif';  font-size:8pt; line-height:120%; color:#808080; text-align:right; font-weight:normal;\">\n                        <a href=\"https://www.dadsprinting.com/unsubscribe/\" target=\"_blank\" style=\"text-decoration: none; color:#808080; text-decoration:none !important;\">\n                          <span>Unsubscribe</span>\n                        </a>\n                      </td>\n                    </tr>\n                  </tbody>\n                </table>\n              </td>\n            </tr>\n          </tbody>\n        </table>\n      </td>\n    </tr>\n  </tbody>\n</table>\n</body>\n</html>",
+        "options": {
+          "threadId": "={{ $('Get a message').item.json.threadId }}",
+          "sendTo": "={{ $('Loop Over Items').item.json.from.value[0].address }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2528,
+        -368
+      ],
+      "id": "ff024ade-cb7c-453e-9d64-6048d5210ee2",
+      "name": "Create a draft",
+      "webhookId": "a7f25321-49b1-4d8e-a3b2-42897432f42b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "Patches",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e6a870d9-ab06-4ee8-83b5-dd4dc42c5149"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Patches"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9319ef59-425c-447a-920b-5af10d3fe43b",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "Promoproducts",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Promo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "21c84fe1-d68d-4092-9c11-be7f7a1d4962",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "Embroideredapparel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Embroidered Apparel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fc3a214e-248b-4ebb-9a77-383808af22e2",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "PrintedApparel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Printed Apparel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a3a0f818-b0e7-42cd-b125-ecf7217932fc",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "Jerseys",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Jerseys"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3268a1fe-5d6b-49b8-bbec-23b234d38f80",
+                    "leftValue": "={{ $json.output[0].content[0].text }}",
+                    "rightValue": "Socks",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Socks"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1728,
+        -400
+      ],
+      "id": "e760b313-7d8a-4b3e-95aa-6c9823023184",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom patches to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 reply questions, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Patches:\n\n1. What are the dimensions of the patch (LxW Inches)\n2. Is the design a Circle, Square, Rectangle or something that would be cut to shape?\n3. Quantity of patches required\n4. Type of Backing (Sew On, Iron On, Velcro, Stick on)\n5. Raised Edge or Not?\n\nDrafting Rules\n\n1. Begin by introducing myself (Hi (client name), Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "role": "system"
+            },
+            {
+              "content": "=Client's Name: {{ $('Get many messages').item.json.from.value[0].name.split(' ')[0].toSentenceCase() }}\n\nEmail {{ $('Get many messages').item.json.headers.subject }}\n\nEmail Contents:\n{{ $('Get many messages').item.json.text }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1952,
+        -816
+      ],
+      "id": "f4417869-56b2-454d-807d-850d42cbc245",
+      "name": "Patch Detailer",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom branded promo product to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Promo Products:\n\n1. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n2. Quantity of units required\n3. Are you looking for any certain materials to be used in the product or certain specs?\n4. Is there a per unit price you are trying to keep it under? \n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "role": "system"
+            },
+            {
+              "content": "=Client's Name: {{ $('Get many messages').item.json.from.value[0].name.split(' ')[0].toSentenceCase() }}\n\nEmail {{ $('Get many messages').item.json.headers.subject }}\n\nEmail Contents:\n{{ $('Get many messages').item.json.text }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1952,
+        -624
+      ],
+      "id": "27ad2433-51e2-4486-b710-36b1387e7834",
+      "name": "Promo Detailer",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom embroidered apparel to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nEmbroidered Apparel:\n\n1. What type of items are we embroidering? Feel free to be as specific as you wish. \n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n3. Quantity of units required\n4. How big do you want your logo to be on the item?\n5. Are you looking for Economic, Midrange or Highend Apparel options?\n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "role": "system"
+            },
+            {
+              "content": "=Client's Name: {{ $('Get many messages').item.json.from.value[0].name.split(' ')[0].toSentenceCase() }}\n\nEmail {{ $('Get many messages').item.json.headers.subject }}\n\nEmail Contents:\n{{ $('Get many messages').item.json.text }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1952,
+        -432
+      ],
+      "id": "7c5dc176-6328-439c-aa92-36d0a8327d87",
+      "name": "Embroidered Apparel Detailer",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom printed apparel to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nPrinted Apparel:\n\n1. What type of items are we printing? Feel free to be as specific as you wish. \n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo? If they have attached or there appears to be a url that looks like it leads to a file. If there is a file, combine this with question 4. \n3. Quantity of units required (ask for a range ideally)\n4. How big do you want your logo to be on the item?\n5. Are you looking for Economic, Midrange or Highend Apparel options?\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "role": "system"
+            },
+            {
+              "content": "=Client's Name: {{ $('Get many messages').item.json.from.value[0].name.split(' ')[0].toSentenceCase() }}\n\nEmail {{ $('Get many messages').item.json.headers.subject }}\n\nEmail Contents:\n{{ $('Get many messages').item.json.text }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1952,
+        -240
+      ],
+      "id": "71a75de7-b0e5-40b4-b5d9-b0f991d0ba74",
+      "name": "Printed Apparel Detailer",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom sports jerseys to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Jerseys:\n\n1. Are you looking for printed jerseys or ones with stitched logo’s?\n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n3. How many jerseys?\n4. Are you looking for a certain color or style of jersey? Feel free to explain in as much detail as you wish.\n5. Do you want names and numbers on the back?\n6. Are there any additional logo’s going on the jerseys for sponsors?\n7. Are there any other items you are looking to pair with the Jerseys?\n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "role": "system"
+            },
+            {
+              "content": "=Client's Name: {{ $('Get many messages').item.json.from.value[0].name.split(' ')[0].toSentenceCase() }}\n\nEmail {{ $('Get many messages').item.json.headers.subject }}\n\nEmail Contents:\n{{ $('Get many messages').item.json.text }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1952,
+        -48
+      ],
+      "id": "449d1bf9-55a7-4134-9fe8-a1565504021e",
+      "name": "Custom Jersey Detailer",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Sales - Gather info for Quote Automation\n\nThis automation is used to gather/request information for new quote requests for sales inquiries, and aims to gather the required details to deliver a quote by drafting the email\n\n**Double click** to watch the video here: [Guide](https://www.loom.com/share/88a1bc235c244bbd95db0506521ee5f0)",
+        "height": 240,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -688
+      ],
+      "id": "101b6209-5a8c-473f-841b-97be4818dcfb",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "resource": "note",
+        "content": "={{ $('Establish Input & Requested Info').item.json.output[0].content[0].text }}\n\nThread ID: {{ $('Get many messages').item.json.threadId }}",
+        "additionalFields": {
+          "deal_id": "={{ $('If Deal Exists').item.json.data[0].id }}"
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        3776,
+        -368
+      ],
+      "id": "5782c997-3ba1-4a1d-b28f-113977e503e0",
+      "name": "Add Order Notes",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72cf810c-dd32-4a24-b37c-3393469224be",
+              "leftValue": "={{ $json.data[0].id }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        -432
+      ],
+      "id": "a119d3eb-7e04-4e13-92f0-4fa488369b19",
+      "name": "If Deal Exists",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5330aba8-361b-4349-9660-8d05a1194985",
+              "name": "DealId",
+              "value": "={{ $if(     $('Create a deal').isExecuted,     $('Create a deal').item.json.id,     $('If Deal Exists').item.json.id ) }} ",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3104,
+        -368
+      ],
+      "id": "00ad63ab-3c9e-4667-b8f3-11e43e7cbb06",
+      "name": "Set Deal ID"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dealId": "={{ $json.DealId }}"
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        -368
+      ],
+      "id": "5e03d70b-91bf-4a5c-bc87-ab9de9f49dd1",
+      "name": "Get a deal",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini-2024-07-18",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI-2024-07-18"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a system built to analyze both sides (customer and seller) of a sales correspondence. Your purpose is to take notes regarding what the client is requesting based off the client's words, as well as what I have requested."
+            },
+            {
+              "content": "=A client sent an email where the body stated the following: \n\n {{ $('Get many messages').item.json.text }}. \n\nIn response, I requested the following in an email:\n\n{{ \n  $if($('Patch Detailer').isExecuted,\n      $('Patch Detailer').item.json.choices[0].message.content,\n      $if($('Promo Detailer').isExecuted,\n          $('Promo Detailer').item.json.choices[0].message.content,\n          $if($('Embroidered Apparel Detailer').isExecuted,\n              $('Embroidered Apparel Detailer').item.json.choices[0].message.content,\n              $if($('Printed Apparel Detailer').isExecuted,\n                  $('Printed Apparel Detailer').item.json.choices[0].message.content,\n                  $if($('Custom Jersey Detailer').isExecuted,\n                      $('Custom Jersey Detailer').item.json.choices[0].message.content,\n                      $if($('Custom Sock Detailer').isExecuted,\n                          $('Custom Sock Detailer').item.json.choices[0].message.content,\n                          \"\"\n                      )\n                  )\n              )\n          )\n      )\n  )\n}}\n\n\nPlease summarize in bullet points what the customer has as we well as what we are asking of the customer in response. No long stretches of text, just the notes. \n\nIf for some reason it's missing the requested information, just have it summarize the first provided info from client. "
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        2752,
+        -368
+      ],
+      "id": "67f605f6-9612-498c-92a1-17038b3e65e6",
+      "name": "Establish Input & Requested Info",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a classifier for a printing company. Analyze the email query and categorize it into EXACTLY one of the following categories:\n\n    1. Jerseys\n    2. PrintedApparel\n    3. Embroideredapparel\n    4. Promoproducts\n    5. Patches\n    6. Socks\n\n    Output ONLY the single word category name. Do not add punctuation."
+            },
+            {
+              "content": "={{ $json.clean_thread_text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        -336
+      ],
+      "id": "1a17d4a1-2072-4ce7-9261-b5166404e284",
+      "name": "Product Classifier",
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom patches to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Socks:\n\n1. How many pairs of socks are you looking for? \n2. What are we putting on the socks? A simple logo placement or a pattern?\n3. Do you have a certain material in mind?\n4. Are you looking for a crew length, knee high, 3/4 or Ankle Sock?\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "role": "system"
+            },
+            {
+              "content": "=Client's Name: {{ $('Get many messages').item.json.from.value[0].name.split(' ')[0].toSentenceCase() }}\n\nEmail {{ $('Get many messages').item.json.headers.subject }}\n\nEmail Contents:\n{{ $('Get many messages').item.json.text }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1952,
+        144
+      ],
+      "id": "646dbe40-bd70-4947-85d0-79089c7c7cca",
+      "name": "Custom Sock Detailer",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -864,
+        -80
+      ],
+      "id": "80093a95-ce1f-4bc4-a1f8-9037fc906c5e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.pipedrive.com/v1/persons/{{ $('IF person exists').item.json.id }}/deals?status=open",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "pipedriveApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        480,
+        -432
+      ],
+      "id": "ddd6aa1d-be7e-4e34-932c-3486b47f8757",
+      "name": "Search for Open Deal",
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node (JavaScript)\n// Builds a \"clean_thread_text\" from the Gmail thread while removing inline images/base64,\n// stripping HTML, trimming signatures/quoted history, and applying a head+tail truncation.\n\nfunction htmlToText(html) {\n  if (!html) return \"\";\n  let s = String(html);\n\n  // Remove head/script/style blocks\n  s = s.replace(/<head[\\s\\S]*?<\\/head>/gi, \" \");\n  s = s.replace(/<script[\\s\\S]*?<\\/script>/gi, \" \");\n  s = s.replace(/<style[\\s\\S]*?<\\/style>/gi, \" \");\n\n  // Kill inline base64 images & img tags\n  s = s.replace(/data:image\\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=\\s]+/g, \"[inline-image-removed]\");\n  s = s.replace(/<img\\b[^>]*>/gi, \"[image-removed]\");\n  s = s.replace(/cid:[^\\s'\"]+/gi, \"[cid-image-removed]\");\n\n  // Basic block to newline\n  s = s.replace(/<br\\s*\\/?>/gi, \"\\n\");\n  s = s.replace(/<\\/p>/gi, \"\\n\");\n  s = s.replace(/<\\/div>/gi, \"\\n\");\n  s = s.replace(/<\\/li>/gi, \"\\n\");\n  s = s.replace(/<\\/tr>/gi, \"\\n\");\n  s = s.replace(/<\\/td>/gi, \"  \");\n\n  // Strip remaining tags\n  s = s.replace(/<[^>]+>/g, \" \");\n\n  // Decode a few common entities (not perfect, but good enough)\n  s = s.replace(/&nbsp;/g, \" \");\n  s = s.replace(/&amp;/g, \"&\");\n  s = s.replace(/&lt;/g, \"<\");\n  s = s.replace(/&gt;/g, \">\");\n  s = s.replace(/&quot;/g, '\"');\n  s = s.replace(/&#39;/g, \"'\");\n\n  // Collapse whitespace\n  s = s.replace(/[ \\t]+\\n/g, \"\\n\");\n  s = s.replace(/\\n{3,}/g, \"\\n\\n\");\n  s = s.replace(/[ \\t]{2,}/g, \" \");\n  return s.trim();\n}\n\nfunction stripQuotedAndSignatures(text) {\n  if (!text) return \"\";\n  let t = String(text);\n\n  // Remove common quoted-reply blocks (keep top part)\n  const cutMarkers = [\n    /^On .* wrote:$/m,\n    /^From:\\s.*$/m,\n    /^Sent:\\s.*$/m,\n    /^To:\\s.*$/m,\n    /^Subject:\\s.*$/m,\n    /^-----Original Message-----$/m,\n    /^_{5,}\\s*$/m\n  ];\n\n  for (const re of cutMarkers) {\n    const m = t.match(re);\n    if (m && m.index != null && m.index > 200) { // only cut if it's not right at the top\n      t = t.slice(0, m.index).trim();\n      break;\n    }\n  }\n\n  // Light signature trimming (don’t be too aggressive)\n  const sigMarkers = [\n    /\\n--\\s*\\n/,                 // standard signature delimiter\n    /\\nSent from my iPhone/i,\n    /\\nSent from my Android/i\n  ];\n  for (const re of sigMarkers) {\n    const idx = t.search(re);\n    if (idx > 200) { // avoid nuking short messages\n      t = t.slice(0, idx).trim();\n      break;\n    }\n  }\n\n  return t.trim();\n}\n\nfunction getMessageHeader(msg) {\n  // Defensive: different Gmail node outputs differ\n  const from =\n    msg?.from?.value?.[0]?.address ||\n    msg?.headers?.from ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"from\")?.value ||\n    \"\";\n\n  const date =\n    msg?.date ||\n    msg?.headers?.date ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"date\")?.value ||\n    \"\";\n\n  const subject =\n    msg?.subject ||\n    msg?.headers?.subject ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"subject\")?.value ||\n    \"\";\n\n  return { from, date, subject };\n}\n\nfunction extractBestBody(msg) {\n  // Try common n8n gmail fields first\n  const plain = msg?.textPlain || msg?.text || msg?.body?.text;\n  const html = msg?.textHtml || msg?.html || msg?.body?.html;\n\n  let body = \"\";\n  if (plain) body = String(plain);\n  else if (html) body = htmlToText(html);\n  else if (msg?.snippet) body = String(msg.snippet);\n  else body = \"\";\n\n  body = stripQuotedAndSignatures(body);\n  return body;\n}\n\nfunction headTailTruncate(text, maxChars = 35000, headChars = 12000) {\n  const t = String(text || \"\");\n  if (t.length <= maxChars) return { text: t, truncated: false };\n\n  const tailChars = Math.max(0, maxChars - headChars);\n  const head = t.slice(0, headChars);\n  const tail = t.slice(Math.max(0, t.length - tailChars));\n  const out = `${head}\\n\\n[[TRUNCATED MIDDLE FOR LENGTH]]\\n\\n${tail}`;\n  return { text: out, truncated: true };\n}\n\n// Pull the thread from the earlier Gmail node by reference.\n// This avoids losing the thread content after Pipedrive nodes mutate $json.\nconst thread = $node[\"Get a thread\"]?.json;\nconst threadId = thread?.id || $json?.threadId || $node[\"Get a message\"]?.json?.threadId || \"\";\n\n// Gmail thread payload usually has thread.messages[]\nconst msgs = Array.isArray(thread?.messages) ? thread.messages : [];\n// Sort oldest -> newest if internalDate exists\nmsgs.sort((a, b) => Number(a?.internalDate || 0) - Number(b?.internalDate || 0));\n\nlet parts = [];\nfor (const m of msgs) {\n  const { from, date, subject } = getMessageHeader(m);\n  const body = extractBestBody(m);\n  if (!body) continue;\n\n  parts.push(\n`From: ${from}\nDate: ${date}\nSubject: ${subject}\n\n${body}`\n  );\n}\n\nlet combined = parts.join(\"\\n\\n---\\n\\n\").trim();\n\n// Final safety: if thread parsing fails, fall back to the single message\nif (!combined) {\n  const single = $node[\"Get a message\"]?.json || {};\n  const { from, date, subject } = getMessageHeader(single);\n  const body = extractBestBody(single);\n  combined =\n`From: ${from}\nDate: ${date}\nSubject: ${subject}\n\n${body}`.trim();\n}\n\n// Apply truncation\nconst { text: clean_thread_text, truncated } = headTailTruncate(combined, 35000, 12000);\n\nreturn [{\n  json: {\n    ...$json,\n    threadId,\n    clean_thread_text,\n    clean_thread_chars: clean_thread_text.length,\n    clean_thread_truncated: truncated\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -336
+      ],
+      "id": "5f2ddeb3-bd35-4cc9-9405-9cf9af0ab4ed",
+      "name": "Build Clean Thread Text"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1312,
+        -80
+      ],
+      "id": "c0639a4c-b89c-49c8-937c-de8b45c8bae9",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare recipient email for draft creation\n// This ensures the draft always has a proper To: address\n\nconst msg = $node[\"Get a message\"]?.json || {};\n\n// Email fallback chain: replyTo -> from\nconst recipientEmail = \n  msg.replyTo?.value?.[0]?.address ||\n  msg.from?.value?.[0]?.address ||\n  \"\";\n\nconst recipientName = \n  msg.replyTo?.value?.[0]?.name ||\n  msg.from?.value?.[0]?.name ||\n  \"\";\n\n// Format as \"Name <email>\" if name exists, otherwise just email\nconst formattedRecipient = recipientName \n  ? `${recipientName} <${recipientEmail}>`\n  : recipientEmail;\n\nreturn [{\n  json: {\n    ...$json,\n    recipientEmail: formattedRecipient\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2304,
+        -368
+      ],
+      "id": "64b41694-408d-416b-93cc-5d0d2ff52d98",
+      "name": "Prepare Recipient2",
+      "notes": "NEW: Fixes empty recipient issue - extracts email with fallback"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -640,
+        -336
+      ],
+      "id": "1127fd1a-f895-44a1-87ad-8da6f40c1216",
+      "name": "Get a message",
+      "webhookId": "5a33f295-3773-4713-8ef3-841b4045f6a4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "get",
+        "threadId": "={{ $json.threadId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -416,
+        -336
+      ],
+      "id": "8b890fa9-26f1-4f97-8a49-049fa765c688",
+      "name": "Get a thread",
+      "webhookId": "a9f10c94-76e5-4f11-89cf-24852d21ae66",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "first-message-check",
+              "leftValue": "={{ $json.messages.length }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -192,
+        -336
+      ],
+      "id": "c64a3ebb-0f27-45dc-995d-f4ba6326bd36",
+      "name": "Is First Message?",
+      "notes": "FIXED: Only triggers on FIRST message (length === 1), not <= 3"
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "operation": "search",
+        "limit": 1,
+        "term": "={{ $('Get a message').item.json.replyTo?.value?.[0]?.address ?? $('Get a message').item.json.from?.value?.[0]?.address }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -336
+      ],
+      "id": "b70da1ac-80b5-4413-bb46-c5981a14c863",
+      "name": "Search a person",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pipedriveApi": {
+          "id": "8vlUznQLKplDUKs9",
+          "name": "Pipedrive account for Info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "Label_6992024041184135133"
+          ],
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1088,
+        -80
+      ],
+      "id": "aa894c89-c43b-4974-a8b2-49f585e1d367",
+      "name": "Get many messages",
+      "webhookId": "ae3853c0-c54b-47af-b11b-861baea4da9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        -368
+      ],
+      "id": "03eccce1-4cde-40be-b903-3368349d1cd5",
+      "name": "Limit"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "IF person exists": {
+      "main": [
+        [
+          {
+            "node": "Search for Open Deal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a deal": {
+      "main": [
+        [
+          {
+            "node": "Build Clean Thread Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a person": {
+      "main": [
+        [
+          {
+            "node": "Create a deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to thread": {
+      "main": [
+        [
+          {
+            "node": "Remove label from thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from thread": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Establish Input & Requested Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Patch Detailer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Promo Detailer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Embroidered Apparel Detailer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Printed Apparel Detailer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Custom Jersey Detailer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Custom Sock Detailer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Patch Detailer": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recipient2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Promo Detailer": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recipient2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embroidered Apparel Detailer": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recipient2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Printed Apparel Detailer": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recipient2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Custom Jersey Detailer": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recipient2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Order Notes": {
+      "main": [
+        [
+          {
+            "node": "Add label to thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Deal Exists": {
+      "main": [
+        [
+          {
+            "node": "Build Clean Thread Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Deal ID": {
+      "main": [
+        [
+          {
+            "node": "Get a deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a deal": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Establish Input & Requested Info": {
+      "main": [
+        [
+          {
+            "node": "Set Deal ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Classifier": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Custom Sock Detailer": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recipient2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search for Open Deal": {
+      "main": [
+        [
+          {
+            "node": "If Deal Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Clean Thread Text": {
+      "main": [
+        [
+          {
+            "node": "Product Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Recipient2": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Get a thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a thread": {
+      "main": [
+        [
+          {
+            "node": "Is First Message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is First Message?": {
+      "main": [
+        [
+          {
+            "node": "Search a person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search a person": {
+      "main": [
+        [
+          {
+            "node": "IF person exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Add Order Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Vancouver",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ODmvYJ8wvhvQCqKJ"
+  },
+  "versionId": "fa282977-79c4-45d4-9e65-69a8c5ef9dcc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "TJwwpENcUlhMRaDe",
+  "tags": [
+    {
+      "updatedAt": "2025-12-08T00:46:38.055Z",
+      "createdAt": "2025-12-08T00:46:38.055Z",
+      "id": "omlUrfq9lKY1K9wm",
+      "name": "Sales"
+    }
+  ]
+}

@@ -1,0 +1,354 @@
+{
+  "name": "Comms Agent - State 3 - FAQ Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */15 9-17 * * 1-5"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1648,
+        -80
+      ],
+      "id": "daee225f-5f20-40c0-9128-ffcdf494dc5a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 10,
+        "simple": false,
+        "filters": {
+          "q": "label:IS-FAQ is:unread in:inbox "
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1408,
+        -80
+      ],
+      "id": "0fce7b9f-3b20-433b-84a8-99257ce3de24",
+      "name": "Get many messages",
+      "webhookId": "bcdc5973-a013-4932-8f20-0d9f10fd6ecd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1168,
+        -96
+      ],
+      "id": "dadb1d2e-9508-4381-a0a6-3513b5e6272e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -928,
+        -80
+      ],
+      "id": "d7757d7a-3d9d-49ac-a366-9cf497d0283c",
+      "name": "Get a message",
+      "webhookId": "ad214e32-2a46-4f63-9c4f-522a1d7bff2d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are a Customer Communication Specialist for Dad’s Printing. Answer the client’s question helpfully and accurately in a short friendly follow-up email draft in HTML.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nRules:\n\nUse Query RAG if internal info (services, pricing, capabilities, etc.) is needed.\n\nIf simple (e.g., “Thanks!”), answer directly.\n\nAlways frame from client’s perspective, highlight their needs/benefits.\n\nNever disclose proprietary details (e.g., supplier names).\n\nWhen using RAG, ask detailed lookup questions.\n\nIMPORTANT: Output only the email text with nothing else. Please also make sure not to use the EM Dash symbols ( — ) or anything characteristic of AI generated copy. ",
+              "role": "system"
+            },
+            {
+              "content": "=## Client's Question:\n{{ $json.text || $json.snippet || $json.plainText || $json.html || '' }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -688,
+        -80
+      ],
+      "id": "6788a881-263c-4ad6-bc07-5375e303a018",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://143.110.219.232",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        80
+      ],
+      "id": "cfb87c07-19dd-48af-995a-06744e34f00a",
+      "name": "Query RAG"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Get a message').item.json.subject }}",
+        "emailType": "html",
+        "message": "={{ $('Message a model').item.json.choices?.[0]?.message?.content || $('Message a model').item.json.output?.[0]?.content?.[0]?.text || '' }}",
+        "options": {
+          "threadId": "={{ $('Get a message').item.json.threadId }}",
+          "sendTo": "={{ $('Get a message').item.json.from.value[0].address }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -80
+      ],
+      "id": "d61f3483-0ba3-44c4-a2fa-8bf2512169b4",
+      "name": "Create a draft",
+      "webhookId": "c52b2877-4209-4539-acad-33e676d093c1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Get a message').item.json.threadId }}",
+        "labelIds": [
+          "Label_4247214787040416958"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        -80
+      ],
+      "id": "1756cd2a-66ab-46f6-b9d8-ca8116715383",
+      "name": "Add label to thread (Processed)",
+      "webhookId": "b5ac6d0b-2d59-4194-b03a-00ca3643cf7b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Get a message').item.json.threadId }}",
+        "labelIds": [
+          "Label_3410199162172389533"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        176,
+        -80
+      ],
+      "id": "98d0e90d-b4ce-4c06-adba-de3d0769135a",
+      "name": "Remove IS-FAQ label from thread",
+      "webhookId": "e546a267-16bd-445d-9fae-ce12a58a7d92",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## FAQ BOT V1\n\n**Purpose** - \n\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1632,
+        -320
+      ],
+      "id": "8f77d940-e19c-449d-8afc-00acda23161d",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query RAG": {
+      "ai_tool": [
+        [
+          {
+            "node": "Message a model",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Add label to thread (Processed)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to thread (Processed)": {
+      "main": [
+        [
+          {
+            "node": "Remove IS-FAQ label from thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove IS-FAQ label from thread": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ODmvYJ8wvhvQCqKJ"
+  },
+  "versionId": "46f7df95-572d-48ed-8549-f038d1a6f276",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "AeNjn8KZPwsDFU5Y",
+  "tags": []
+}

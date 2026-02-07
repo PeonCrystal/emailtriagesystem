@@ -1,0 +1,281 @@
+{
+  "name": "Hourly Form Email Cleaner",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "name": "Run Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        576
+      ],
+      "id": "b1197bf8-fb5e-4f3d-ba20-a64676da0989"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// We're in \"Run Once for Each Item\" mode\n\n// Get the text from the current item\nconst text = item.json.textAsHtml || item.json.text || '';\n\n// Find \"Quantity: <number>\"\nconst match = text.match(/Quantity:\\s*(\\d+)/i);\nconst quantity = match ? parseInt(match[1], 10) : null;\n\n// Add quantity to current item\nitem.json.quantity = quantity;\n\n// Return the updated item (no $)\nreturn item;\n"
+      },
+      "name": "Extract Quantity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        720,
+        576
+      ],
+      "id": "c9a472d6-7bc2-4652-b9c2-5bf9a84db7b0"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "Label_4390932624994723543"
+          ],
+          "readStatus": "unread",
+          "sender": "info@dadsprinting.com"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        576
+      ],
+      "id": "6b5e6ccd-802a-41c8-8505-14dcf7936229",
+      "name": "Grab Form Emails",
+      "webhookId": "5588d7d2-492c-4578-9373-638049a583c6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Grab Form Emails').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1168,
+        576
+      ],
+      "id": "b7c3f7c6-62b1-4e2f-8526-5238d1bc7dde",
+      "name": "Mark a message as read",
+      "webhookId": "c0683e61-1310-47b7-b6a7-5f88e17e44a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "36d72959-7c95-4dca-a27d-018773341eea",
+              "leftValue": "={{ $('Grab Form Emails').item.json.subject }}",
+              "rightValue": "Jerseys Canada Form",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "d24226c0-60c1-424b-8273-0f6bee83956e",
+              "leftValue": "={{ $json.quantity }}",
+              "rightValue": 20,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        480
+      ],
+      "id": "570cbed4-90a6-4a6c-b3b5-98c13121fcfb",
+      "name": "Jerseys"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1c224dda-0f47-4a16-bed3-89e9623b02c3",
+              "leftValue": "={{ $('Grab Form Emails').item.json.subject }}",
+              "rightValue": "Form Submission",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "56cfd491-c826-4086-a534-c16d0d4e3a48",
+              "leftValue": "={{ $('Grab Form Emails').item.json.subject }}",
+              "rightValue": "Jerseys Canada Form",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "c0749fb6-5bc4-4688-9462-746d15fb9c02",
+              "leftValue": "={{ $json.quantity }}",
+              "rightValue": 100,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        672
+      ],
+      "id": "74fac710-2d34-43c5-8227-1f70a31c3074",
+      "name": "All Others"
+    }
+  ],
+  "pinData": {
+    "Run Every Hour": [
+      {
+        "json": {
+          "timestamp": "2025-11-06T18:39:31.644+01:00",
+          "Readable date": "November 6th 2025, 6:39:31 pm",
+          "Readable time": "6:39:31 pm",
+          "Day of week": "Thursday",
+          "Year": "2025",
+          "Month": "November",
+          "Day of month": "06",
+          "Hour": "18",
+          "Minute": "39",
+          "Second": "31",
+          "Timezone": "Europe/Berlin (UTC+01:00)"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Run Every Hour": {
+      "main": [
+        [
+          {
+            "node": "Grab Form Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Quantity": {
+      "main": [
+        [
+          {
+            "node": "Jerseys",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "All Others",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grab Form Emails": {
+      "main": [
+        [
+          {
+            "node": "Extract Quantity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jerseys": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Others": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e0c5c0a4-0fce-41d3-9fc1-1df721c0131f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "cv9y4MD8PFiCP27x",
+  "tags": [
+    {
+      "updatedAt": "2025-11-16T00:26:22.434Z",
+      "createdAt": "2025-11-16T00:26:22.434Z",
+      "id": "dJGSllKQRCQuCvjQ",
+      "name": "VA / for info@"
+    }
+  ]
+}

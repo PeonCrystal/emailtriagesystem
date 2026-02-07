@@ -1,0 +1,1823 @@
+{
+  "name": "EMAIL TRIAGE SYSTEM - - TIGHTEN",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "is:unread -label:\"COMMS-CONTACTFORM\" -label:\"COMMS - POST FOLLOW...\" -label:\"TAG-SYS\" -label:\"Forms\" -label:\"Notifications\" -subject:\"New message - Dads Printing Site\"",
+          "readStatus": "unread"
+        }
+      },
+      "id": "747eedef-7fb3-4ca2-8eb7-ff847aaa8386",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        288
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a production-grade email classification engine.\n\nYou do not write emails.\nYou do not roleplay.\nYou do not explain things.\n\nYou output only valid JSON.\n\nIf anything is ambiguous, choose TAG-SYS/Unsure.\n\nFollow all instructions strictly.\n"
+            },
+            {
+              "content": "=You are an enterprise email triage engine for Adam's company.\n\nYour job is NOT to be helpful.\nYour job is to correctly classify, route, and control state inside Gmail.\n\nYou will receive:\n- Email subject\n- Email body/snippet\n- Sender\n- Existing Gmail labels (full names)\n\nYou must output a single JSON object.\n\n━━━━━━━━━━━━━━━━━━━━━━\nGLOBAL RULES\n━━━━━━━━━━━━━━━━━━━━━━\n\n1) You MUST assign exactly one A-label  \n2) You MAY assign one B-label, but only if allowed AND both confidences meet threshold  \n3) Never hallucinate facts  \n4) If uncertain → TAG-SYS/Unsure  \n5) If the email already has ANY label starting with \"TAG-SYS/\" then return:\n\n{\n  \"skip\": true,\n  \"reason\": \"Already processed (TAG-SYS label exists)\"\n}\n\n6) Assume this runs on EVERY new email\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nDO NOT PROCESS IF\n━━━━━━━━━━━━━━━━━━━━━━\n\nIf the email has label \"SENT\", return:\n{\n  \"skip\": true,\n  \"reason\": \"Outbound email (SENT)\"\n}\n\nIf the email has label:\n\n- COMMS-CONTACTFORM\n- COMMS-POSTFOLLOWUP\n- FORMS\n- Notifications\n- \"TAG-SYS/Receipts\"\n- \"TAG-SYS/Receivable\"\n\nReturn:\n{\n  \"skip\": true,\n  \"reason\": \"Excluded by system label\"\n}\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nPERSONAL OVERRIDE (CRITICAL)\n━━━━━━━━━━━━━━━━━━━━━━\n\nIf the email is about ANY of the following, it MUST be classified as TAG-SYS/Personal\nand MUST NOT be classified as Sales or CS:\n\n- Home services (kitchen, counters, plumbing, electrical, renovations)\n- Personal purchases\n- Medical, insurance, travel, banking\n- Real estate unrelated to Adam's businesses\n- Friends or family\n- Any non–revenue-generating personal matter\n\nThis rule OVERRIDES ALL SALES LOGIC.\n\nIf unsure whether something is business or personal → TAG-SYS/Personal or TAG-SYS/Unsure\nNEVER TAG AS SALES BY DEFAULT.\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nRECEIPTS vs PAYABLES (MANDATORY)\n━━━━━━━━━━━━━━━━━━━━━━\n\nThis is the most important financial distinction.\n\nReceipts = payment already happened.  \nPayables = payment is required.\n\nIf the email confirms a completed transaction:\n→ TAG-SYS/Receipts 2026\n\nIf the email requests payment or contains an invoice:\n→ TAG-SYS/Payable\n\nIf BOTH appear:\n- Choose Payable ONLY if money is still owed  \n- Otherwise choose Receipts 2026\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nA-LABELS (Primary Classification)\n━━━━━━━━━━━━━━━━━━━━━━\n\nChoose exactly ONE:\n\nTAG-SYS/Personal  \nFriends, family, landlords, personal services, home services, medical, travel, anything not business.\n\nTAG-SYS/GOV  \nCRA, government, courts, tax agencies, legal filings.\n\nTAG-SYS/OPS  \nVendors, software, tools, suppliers, staff, shipping, subscriptions, vendor solicitations selling to us.\n\nTAG-SYS/Receivable  \nMoney coming IN. Client payments, deposits, Stripe, PayPal, invoices paid.\n\nTAG-SYS/Payable  \nMoney going OUT. Bills, invoices to pay, vendor charges.\n\nTAG-SYS/Receipts 2026  \nCompleted purchases and transaction confirmations for bookkeeping.\n\nTAG-SYS/CS  \nExisting customer with a problem: wrong order, delay, defect, complaint.\n\nTAG-SYS/Sales  \nSomeone trying to buy, quote, reorder, negotiate, or start an order with Adam's businesses.\nDO NOT use for vendors selling to us or personal matters.\n\nTAG-SYS/Unsure  \nAmbiguous or mixed signals.\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nB-LABEL RULES (DUAL CONFIDENCE GATE)\n━━━━━━━━━━━━━━━━━━━━━━\n\nB-labels require BOTH:\n- a_confidence ≥ 0.70\n- b_confidence ≥ 0.80\n\nIf EITHER confidence is below threshold → b_label MUST be null\n\n\nCS B-Labels (only if A = TAG-SYS/CS):\n- TAG-SYS/CS/ROUTE-CS\n- TAG-SYS/CS/INVOLVED\n- TAG-SYS/CS/DELEGATED\n\n\nSales B-Labels (only if A = TAG-SYS/Sales):\n- TAG-SYS/Sales/NEEDS-INFO\n- TAG-SYS/Sales/QUOTE\n- TAG-SYS/Sales/INVOICE\n- TAG-SYS/Sales/LOST\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nNEEDS-INFO vs QUOTE (CRITICAL)\n━━━━━━━━━━━━━━━━━━━━━━\n\nWHEN IN DOUBT, DO NOT ASSIGN A B-LABEL.\n\nIf unsure whether an email is NEEDS-INFO or QUOTE → set b_label to null.\nThe email will remain tagged as TAG-SYS/Sales only, for human review.\n\nOnly use NEEDS-INFO if ALL THREE are true:\n1. Product category is completely unclear (can't tell if it's apparel, patches, promo, etc.)\n2. No quantity or even a rough range is mentioned\n3. Customer has not referenced any past order or said \"reorder\" / \"same as last time\"\n\nOnly use QUOTE if you are CONFIDENT:\n- Product type is clearly identifiable\n- Customer gave a quantity (even a range like \"50-100\")\n- You could quote with reasonable assumptions\n- Customer mentioned a previous order or said \"same as last time\"\n\nIf only minor details are missing (sizes, colors, exact date) → QUOTE\nIf you're unsure → b_label = null, let human decide\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nMISSING INFO\n━━━━━━━━━━━━━━━━━━━━━━\n\nIf B-label = TAG-SYS/Sales/NEEDS-INFO,\nreturn an array of what is missing.\n\nOtherwise return []\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nCONFIDENCE SCORING\n━━━━━━━━━━━━━━━━━━━━━━\n\na_confidence = how certain you are in the A-label choice\nb_confidence = how certain you are in the B-label choice\n\nScale:\n- 0.90–1.00 → very clear, obvious\n- 0.80–0.89 → confident\n- 0.70–0.79 → reasonable but not perfect\n- < 0.70 → uncertain\n\nWhen unsure between NEEDS-INFO and QUOTE → set b_label to null (no B-label assigned)\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nOUTPUT FORMAT (STRICT)\n━━━━━━━━━━━━━━━━━━━━━━\n\nReturn ONLY this JSON:\n\n{\n  \"skip\": false,\n  \"a_label\": \"TAG-SYS/Sales\",\n  \"a_confidence\": 0.92,\n  \"b_label\": \"TAG-SYS/Sales/QUOTE\",\n  \"b_confidence\": 0.85,\n  \"reason\": \"Short explanation\",\n  \"missing_info\": [],\n  \"next_action\": \"human|draft_email|queue_quote|close_deal|route_cs|none\"\n}\n\n\n\n━━━━━━━━━━━━━━━━━━━━━━\nEMAIL INPUT\n━━━━━━━━━━━━━━━━━━━━━━\n\nSubject:\n{{ $json.Subject }}\n\nFrom:\n{{ $json.From }}\n\nTo:\n{{ $json.To }}\n\nBody snippet:\n{{ $json.snippet || \"\" }}\n\nExisting Gmail labels:\n{{ ($json.labels || []).map(l => l.name) }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": {}
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1536,
+        288
+      ],
+      "id": "de7a8dbc-917f-4024-83f9-79d2d700c2c7",
+      "name": "Assign Label Titles",
+      "credentials": {
+        "openAiApi": {
+          "id": "GnGaeJRStZQSk3Xz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3008,
+        288
+      ],
+      "id": "39884f00-ff7c-4dc5-9059-3a69f55b3076",
+      "name": "Grab Label ID's",
+      "webhookId": "fc568657-e540-4719-bbe4-b6dfcee192c0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Desired label NAMES from AI\nconst wantedNames = [\n$node[\"B-Label Gate\"].json.a_label,\n$node[\"B-Label Gate\"].json.b_label\n].filter(l => l && l !== \"null\");\n\n// Labels list from Gmail \"Get Many Labels\"\nconst all = $json; // this item is a label record per item OR list depending on node mode\n\n// n8n sometimes returns labels as items (one per label). Build map from incoming items:\nconst items = $input.all().map(i => i.json);\n\nconst nameToId = new Map(items.map(l => [l.name, l.id]));\n\nconst wantedIds = wantedNames\n  .map(n => nameToId.get(n))\n  .filter(Boolean);\n\nif (wantedIds.length !== wantedNames.length) {\n  const missing = wantedNames.filter(n => !nameToId.get(n));\n  throw new Error(\"Missing Gmail labels (create these in Gmail first): \" + missing.join(\", \"));\n}\n\nreturn [{\n  json: {\n    messageId: $node[\"Gmail Trigger\"].json.id,\n    labelIds: wantedIds,\n    wantedNames\n  }\n}];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3232,
+        288
+      ],
+      "id": "4631ce28-bf62-406a-a661-1257d0bab7ac",
+      "name": "Label Name to ID's"
+    },
+    {
+      "parameters": {
+        "jsCode": "const messageId = $json.messageId;\nconst labelIds = $json.labelIds;\n\nif (!messageId) throw new Error(\"Missing messageId\");\nif (!Array.isArray(labelIds) || labelIds.length === 0) throw new Error(\"Missing labelIds\");\n\nreturn labelIds.map(labelId => ({\n  json: { messageId, labelId }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3456,
+        288
+      ],
+      "id": "a3d1f349-202d-4cc5-b226-9b9d15a5b308",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "Label_6987809646185878109",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c9378a38-c6f2-4eaf-8cd7-8b09e1b8b1af"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "If Sales"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d48650a9-2f77-43aa-84ac-287897d5b20c",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "Label_3949902621696502266",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reciepts"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8cc7ecbf-cda2-4505-b9af-288d3b46c716",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "Label_427355719247324158",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Receivables - End"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1e070a49-1640-4b8a-a488-632d53aa5373",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "Label_1704140087250900848",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Payable - End"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "11f8cbdf-7551-46e8-9083-b7a8ab21740a",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "Label_6961513130559113764",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IF GOV"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a3cc85d5-f5e6-44c2-94be-97bb0f7c2c64",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "Label_7957527206812753254",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IF OPS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6119d07c-21d8-473b-850c-4980e9c42429",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "Label_7350470234196832677",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IF UNSURE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "895ea0fd-635c-40b7-b3d2-9e7acaf108b6",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "=Label_857385070691210960",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PERSONAL"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e1306996-d27f-4e38-bc4d-dc5b1a987339",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[0] }}",
+                    "rightValue": "=Label_8558316024490148552",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "If Customer Service"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        3904,
+        176
+      ],
+      "id": "59c60046-0abe-457b-840a-9daba0d97f6b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6c9b6d46-fab6-4bd0-bd27-722aeca6e222",
+                    "leftValue": "={{ $('Normalizes skip flag').item.json.triage.skip }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "false"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "af73f156-c310-4d4f-a40c-ada7b7b2aa89",
+                    "leftValue": "=\n{{ $('Normalizes skip flag').item.json.triage.skip }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "End"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2784,
+        288
+      ],
+      "id": "9c407a76-4415-4458-a5d1-fa8b4fce90c1",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4176,
+        192
+      ],
+      "id": "b9dc10d9-c289-45f4-ade3-14fe476fe429",
+      "name": "Mark a message as read",
+      "webhookId": "e7e25cf4-b6c0-4648-a49f-1d13f5dde4d9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[1] }}",
+                    "rightValue": "Label_4445720407385800790",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f1eedd77-f31b-4c49-9592-0c0c1e5aa048"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CS-DELEGATED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "273a1f78-63f9-408f-b412-87a3df9abd75",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[1] }}",
+                    "rightValue": "Label_1540280282738845396",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ROUTE-CS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e1232d49-569c-44ab-9c20-a4474c9c7f1e",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[1] }}",
+                    "rightValue": "Label_3917960758757248870",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CS-INVOLVE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        4352,
+        560
+      ],
+      "id": "d74ba1a6-e219-41e8-9487-eb19be3b44e0",
+      "name": "CREATE CS ROUTES"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[1] }}",
+                    "rightValue": "Label_5719591592693262311",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f1eedd77-f31b-4c49-9592-0c0c1e5aa048"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "INVOICE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c976f7c2-8c4a-4958-812e-2cceb453639a",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[1] }}",
+                    "rightValue": "Label_6620902005591924255",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "LOST"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0448364d-1399-4b06-8e24-0ed0d465996e",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[1] }}",
+                    "rightValue": "Label_6992024041184135133",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NEEDS-INFO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "912e41b1-b463-4ede-a5ba-467a1849db08",
+                    "leftValue": "={{ $('Label Name to ID\\'s').item.json.labelIds[1] }}",
+                    "rightValue": "Label_2227810883237687599",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "QUOTE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        4352,
+        -128
+      ],
+      "id": "64c7883d-bc1e-4448-9217-6900fd1a491f",
+      "name": "CREATE SALES ROUTES"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.messageId }}",
+        "labelIds": "={{ $json.labelId }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3680,
+        288
+      ],
+      "id": "a33d250e-ff22-4820-b5c7-6dc023b12c2c",
+      "name": "Add Label A",
+      "webhookId": "e955a5c4-8e10-48b5-b9b3-495a1c2217d3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "##Adjustments\n\n\n1. Reciepts 2026 added equals payable's tag being removed, only in that order. As a payable becomes a receipt after payment.\n\n2. It had a hard time deciphering AP Reciepts\n\n3. Doesn't seen to be getting all emails . lots of them seem to hit my inbox and not get a tag. \n\n4. It has a hard tiem differentiating CS-Delegated from route. \n\n5. Does the no tag-sys  logic make sense to have as an excludor, IE: If someone who was NEEDS-INFO gets moved to INVOICE\n\n6. How do we differentiate a tag for standard sales correspondece vs other options (perhaps no tag B applied) How would that logic look?\n\nPLEASE UPLOAD AUDITED EMAIL ADJUSTMENTS AFTER 1 week\n",
+        "height": 656,
+        "width": 848
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        -640
+      ],
+      "id": "fcf03e40-6e7a-4ea0-b6ab-8eb58bdb26dd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.triage?.skip ?? $json.skip ?? false;\n\nconst skip_bool =\n  raw === true ? true :\n  raw === false ? false :\n  (typeof raw === \"string\" ? raw.trim().toLowerCase() === \"true\" : false);\n\nreturn [{ json: { ...$json, skip_bool } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2336,
+        288
+      ],
+      "id": "dafe31c6-5af7-469d-8418-b436e1a09b7a",
+      "name": "Normalizes skip flag"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Keep the original Gmail trigger item + add parsed AI fields onto it\n\nconst aiText = $json.output?.[0]?.content?.[0]?.text;\nif (!aiText) throw new Error(\"No OpenAI text output found at output[0].content[0].text\");\n\nlet parsed;\ntry {\n  parsed = JSON.parse(aiText);\n} catch (e) {\n  throw new Error(\"OpenAI output was not valid JSON. Raw text: \" + aiText);\n}\n\n// IMPORTANT: merge the parsed AI fields into the incoming item\n// so we keep the Gmail fields like id, labels, Subject, From, etc.\nreturn [{\n  ...$json,          // original item (from OpenAI node input)\n  triage: parsed,    // put AI result under triage (clean namespace)\n  ...parsed          // ALSO flatten for convenience (optional)\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        288
+      ],
+      "id": "09e1ccca-2668-4ef4-a260-9a5b1e84d147",
+      "name": "Attach AIOutput to Email"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+          "mode": "list",
+          "cachedResultName": "AI TRIAGE AUDIT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ new Date().toISOString() }}",
+            "message_id": "={{ $('Gmail Trigger').first().json.id }}\n",
+            "thread_id": "={{ $('Gmail Trigger').first().json.threadId }}\n",
+            "from_email": "={{ $('Gmail Trigger').first().json.From }}\n",
+            "from_domain": "={{ ( $('Gmail Trigger').first().json.From || '' ).match(/@([^>\\s]+)/)?.[1] || '' }}\n",
+            "subject": "={{ $('Gmail Trigger').first().json.Subject }}\n",
+            "snippet": "={{ $('Gmail Trigger').first().json.snippet || '' }}\n",
+            "a_label": "={{ $json.a_label }}",
+            "b_label": "={{ $json.b_label }}",
+            "confidence": "={{ $json.confidence }}",
+            "reason": "={{ $json.reason }}",
+            "existing_labels": "={{ ($json.labels || []).map(l => l.name).join(', ') }}",
+            "skip": "=",
+            "skip reason": "=",
+            "review_status": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "from_email",
+              "displayName": "from_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "from_domain",
+              "displayName": "from_domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "a_label",
+              "displayName": "a_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "b_label",
+              "displayName": "b_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "existing_labels",
+              "displayName": "existing_labels",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "skip",
+              "displayName": "skip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "skip reason",
+              "displayName": "skip reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_status",
+              "displayName": "review_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Correct_a_label",
+              "displayName": "Correct_a_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "correct_b_label",
+              "displayName": "correct_b_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "apply_fix",
+              "displayName": "apply_fix",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2560,
+        288
+      ],
+      "id": "43e1e28c-ef0e-4664-a6eb-4a2def8f5d83",
+      "name": "Add To Audit Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== SETTINGS =====\nconst B_LABEL_MIN_CONFIDENCE = 0.80; // B-label confidence threshold\n\n// ===== INPUT =====\nconst a = $json.a_label ?? $json.triage?.a_label ?? null;\nlet b = $json.b_label ?? $json.triage?.b_label ?? null;\n\nconst aConf = $json.a_confidence ?? $json.triage?.a_confidence ?? 0;\nconst bConf = $json.b_confidence ?? $json.triage?.b_confidence ?? 0;\n\n// Normalize b_label strings like \"null\"\nif (b === \"null\") b = null;\n\n// B-label only allowed for Sales/CS\nconst bAllowed = (a === \"TAG-SYS/Sales\" || a === \"TAG-SYS/CS\");\n\n// Gate rule: must pass BOTH a_confidence >= 0.70 AND b_confidence >= 0.80\nif (!bAllowed || aConf < 0.70 || bConf < B_LABEL_MIN_CONFIDENCE || !b) {\n  b = null;\n}\n\n// Extra safety: prefix match\nif (b && a === \"TAG-SYS/Sales\" && !String(b).startsWith(\"TAG-SYS/Sales/\")) b = null;\nif (b && a === \"TAG-SYS/CS\" && !String(b).startsWith(\"TAG-SYS/CS/\")) b = null;\n\n// Write back\nconst out = { \n  ...$json, \n  a_confidence: aConf,\n  b_confidence: bConf,\n  b_label: b \n};\n\nif (out.triage && typeof out.triage === \"object\") {\n  out.triage = { \n    ...out.triage, \n    a_confidence: aConf,\n    b_confidence: bConf,\n    b_label: b \n  };\n}\n\nreturn [{ json: out }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        288
+      ],
+      "id": "c0db6e49-4254-4948-9f89-f7014d7cf450",
+      "name": "B-Label Gate"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "=={{ $json.b_label !== null && $json.b_label !== undefined && $json.b_label !== \"null\" && $json.b_label !== \"\" }}\n",
+                    "rightValue": "=",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "655748a3-cceb-48c9-a7c5-03caa2886141"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "544361ca-98fe-4adb-a221-7495a56b6fc7",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        4128,
+        -96
+      ],
+      "id": "a8183aed-e81f-4c89-a15d-b2a04a0ab225",
+      "name": "If Has B Label - Sales"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "=={{ $json.b_label !== null && $json.b_label !== undefined && $json.b_label !== \"null\" && $json.b_label !== \"\" }}\n",
+                    "rightValue": "=",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "655748a3-cceb-48c9-a7c5-03caa2886141"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        4128,
+        576
+      ],
+      "id": "7f9cd016-b04d-4096-81b5-59201bbd2b79",
+      "name": "If Has B Label - CS"
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        384
+      ],
+      "id": "e46c0826-8f9f-4ecd-9a79-2c8999aa5f76",
+      "name": "Mark CS-Delegated Read1",
+      "webhookId": "ac20cfd3-25d3-4391-b6ea-794d77c9066c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_3917960758757248870",
+          "Label_4445720407385800790"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        576
+      ],
+      "id": "f253575b-4a3b-45ff-b057-424de9403d32",
+      "name": "Cleanup Before ROUTE-CS1",
+      "webhookId": "cleanup-route-cs",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_1540280282738845396"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        576
+      ],
+      "id": "fe988186-2854-434d-844a-9256c7ea04e5",
+      "name": "ROUTE-CS - Triggers Automation1",
+      "webhookId": "115155b1-640d-482a-8d4a-1276d538bea7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_1540280282738845396",
+          "Label_4445720407385800790"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        768
+      ],
+      "id": "36c4ad6e-c02e-4032-bdc8-6194dd10d3f1",
+      "name": "Cleanup Before CS-INVOLVE1",
+      "webhookId": "cleanup-cs-involve",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_3917960758757248870"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        768
+      ],
+      "id": "9dac9e57-a7fc-4830-b670-8d429c950755",
+      "name": "CS-Label Involve1",
+      "webhookId": "ec6c9ee3-8e11-4e84-9597-0d7a67f5de3e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_6992024041184135133",
+          "Label_2227810883237687599",
+          "Label_5719591592693262311"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        -192
+      ],
+      "id": "cfe19003-6029-4dfd-bc04-c54f90869480",
+      "name": "Cleanup Before LOST1",
+      "webhookId": "cleanup-sales-lost",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_6620902005591924255"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        -192
+      ],
+      "id": "748bc058-75a0-4b49-8527-1326ee240cc2",
+      "name": "Mark As Lost - Trigger Automation1",
+      "webhookId": "3a36d2f7-0a4a-4088-bd39-5eb825556173",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_6992024041184135133",
+          "Label_2227810883237687599",
+          "Label_6620902005591924255"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        -384
+      ],
+      "id": "beee7f8f-1178-453d-9d37-a73e8673691b",
+      "name": "Cleanup Before INVOICE1",
+      "webhookId": "cleanup-sales-invoice",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_5719591592693262311"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        -384
+      ],
+      "id": "83c92c4b-cc72-4808-9d74-25430dea395e",
+      "name": "SALES-INVOICE TAG APPLIED1",
+      "webhookId": "ecf537c0-9c1d-4aad-a783-87f9cf3788b2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_2227810883237687599",
+          "Label_5719591592693262311",
+          "Label_6620902005591924255"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        0
+      ],
+      "id": "1a2e2bd2-f49c-497e-b978-2dd096699fa3",
+      "name": "Cleanup Before NEEDS-INFO1",
+      "webhookId": "cleanup-sales-needsinfo",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_6992024041184135133"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        0
+      ],
+      "id": "6cefa778-6a8c-46d7-bb25-9259f1b89d70",
+      "name": "MARK AS NEEDS INFO-TRIGGER AUTOMATION1",
+      "webhookId": "5c14b796-fd41-4e56-9fb5-4a069f3c2a92",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_6992024041184135133",
+          "Label_5719591592693262311",
+          "Label_6620902005591924255"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        192
+      ],
+      "id": "7041c5a9-5896-4b6f-b310-835c90ebc9cf",
+      "name": "Cleanup Before QUOTE1",
+      "webhookId": "cleanup-sales-quote",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "Label_2227810883237687599"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        192
+      ],
+      "id": "094bad70-7028-48aa-a8e6-8772f9617ea2",
+      "name": "MARK AS QUOTE - TAG APPLIED1",
+      "webhookId": "d4795759-0278-41fd-b875-ff1c9296011f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        384
+      ],
+      "id": "b4f51128-f124-435a-bcb1-e1af124f185d",
+      "name": "Archive",
+      "webhookId": "115155b1-640d-482a-8d4a-1276d538bea7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_6987809646185878109",
+          "Label_5719591592693262311",
+          "Label_6620902005591924255",
+          "Label_6992024041184135133",
+          "Label_2227810883237687599",
+          "Label_3844778958143695381",
+          "Label_8558316024490148552",
+          "Label_4445720407385800790",
+          "Label_3917960758757248870",
+          "Label_1540280282738845396"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4176,
+        400
+      ],
+      "id": "392d4511-cfa5-422e-ae1b-42d7fdc14c23",
+      "name": "Remove label from thread",
+      "webhookId": "949c824a-d3bd-4df4-8619-db1e54b7ba81",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        288
+      ],
+      "id": "718d4752-9e4c-4df5-87f6-05bb17514956",
+      "name": "30 second delay",
+      "webhookId": "48f800b7-4502-4e07-8487-ed395a6c0856"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "30 second delay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Label Titles": {
+      "main": [
+        [
+          {
+            "node": "Attach AIOutput to Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grab Label ID's": {
+      "main": [
+        [
+          {
+            "node": "Label Name to ID's",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label Name to ID's": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Add Label A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Grab Label ID's",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "If Has B Label - Sales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [],
+        [],
+        [
+          {
+            "node": "Remove label from thread",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "If Has B Label - CS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CREATE CS ROUTES": {
+      "main": [
+        [
+          {
+            "node": "Mark CS-Delegated Read1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cleanup Before ROUTE-CS1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cleanup Before CS-INVOLVE1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CREATE SALES ROUTES": {
+      "main": [
+        [
+          {
+            "node": "Cleanup Before INVOICE1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cleanup Before LOST1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cleanup Before NEEDS-INFO1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cleanup Before QUOTE1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Label A": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizes skip flag": {
+      "main": [
+        [
+          {
+            "node": "Add To Audit Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach AIOutput to Email": {
+      "main": [
+        [
+          {
+            "node": "B-Label Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add To Audit Sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B-Label Gate": {
+      "main": [
+        [
+          {
+            "node": "Normalizes skip flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has B Label - Sales": {
+      "main": [
+        [
+          {
+            "node": "CREATE SALES ROUTES",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If Has B Label - CS": {
+      "main": [
+        [
+          {
+            "node": "CREATE CS ROUTES",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Before ROUTE-CS1": {
+      "main": [
+        [
+          {
+            "node": "ROUTE-CS - Triggers Automation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Before CS-INVOLVE1": {
+      "main": [
+        [
+          {
+            "node": "CS-Label Involve1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Before LOST1": {
+      "main": [
+        [
+          {
+            "node": "Mark As Lost - Trigger Automation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Before INVOICE1": {
+      "main": [
+        [
+          {
+            "node": "SALES-INVOICE TAG APPLIED1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Before NEEDS-INFO1": {
+      "main": [
+        [
+          {
+            "node": "MARK AS NEEDS INFO-TRIGGER AUTOMATION1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Before QUOTE1": {
+      "main": [
+        [
+          {
+            "node": "MARK AS QUOTE - TAG APPLIED1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark CS-Delegated Read1": {
+      "main": [
+        [
+          {
+            "node": "Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "30 second delay": {
+      "main": [
+        [
+          {
+            "node": "Assign Label Titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "35411349-761f-4dcd-b816-9cb35af4ceb2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "FtmyhXLDvo21tqm4",
+  "tags": [
+    {
+      "updatedAt": "2025-11-16T00:26:22.434Z",
+      "createdAt": "2025-11-16T00:26:22.434Z",
+      "id": "dJGSllKQRCQuCvjQ",
+      "name": "VA / for info@"
+    },
+    {
+      "updatedAt": "2025-09-18T21:07:48.004Z",
+      "createdAt": "2025-09-18T21:07:48.004Z",
+      "id": "la3xBPTfmFJpCXec",
+      "name": "COMMS"
+    }
+  ]
+}
