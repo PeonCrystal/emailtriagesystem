@@ -15,13 +15,13 @@
 
 ## 2026
 
-### [2026-02-08] - TAG-SYS Label Cleanup Workflow (Make.com)
-**Component:** New Make.com scenario — `TAG-SYS Label Cleanup (Daily).json`
-**Description:** Scheduled daily cleanup that strips TAG-SYS labels from threads no longer in the Inbox (archived > 2 days). Reduces label clutter (e.g., OPS had 86 tagged threads, Personal 31, most not in Inbox). Also strips Notifications label from archived threads. Receipts 2026 is handled separately — marked as read after 2 days but labels are preserved for tax records.
+### [2026-02-08] - TAG-SYS Label Cleanup Workflow (n8n)
+**Component:** New n8n workflow — `TAG-SYS Label Cleanup (Daily).json`
+**Description:** Scheduled daily cleanup (2 AM) that strips TAG-SYS labels from threads no longer in the Inbox (archived > 2 days). Reduces label clutter (e.g., OPS had 86 tagged threads, Personal 31, most not in Inbox). Also strips Notifications label from archived threads. Receipts 2026 is handled separately — marked as read after 2 days but labels are preserved for tax records.
 **Reason:** Label counts were inflated by old archived threads, making label sidebar unreliable as a work queue
 **Impact:** All TAG-SYS A-labels, B-labels, and Notifications cleaned from archived threads; Receipts 2026 marked as read only
-**Rollback:** Disable the Make.com scenario
-**Status:** ⏳ Ready to import — requires Gmail connection + Notifications label ID
+**Rollback:** Disable the n8n workflow
+**Status:** ⏳ Ready to import — replace `__NOTIFICATIONS_LABEL_ID__` with actual Gmail label ID
 
 **Routes:**
 - Sales: strips A-label + NEEDS-INFO, QUOTE, INVOICE, LOST
