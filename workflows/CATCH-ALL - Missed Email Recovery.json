@@ -74,9 +74,9 @@
       "parameters": {
         "modelId": {
           "__rl": true,
-          "value": "gpt-4o-mini",
+          "value": "gpt-5-mini",
           "mode": "list",
-          "cachedResultName": "GPT-4O-MINI"
+          "cachedResultName": "GPT-5-MINI"
         },
         "responses": {
           "values": [
@@ -250,132 +250,20 @@
           },
           "matchingColumns": [],
           "schema": [
-            {
-              "id": "timestamp",
-              "displayName": "timestamp",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "message_id",
-              "displayName": "message_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "thread_id",
-              "displayName": "thread_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "from_email",
-              "displayName": "from_email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "from_domain",
-              "displayName": "from_domain",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "subject",
-              "displayName": "subject",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "snippet",
-              "displayName": "snippet",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "a_label",
-              "displayName": "a_label",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "b_label",
-              "displayName": "b_label",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "confidence",
-              "displayName": "confidence",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "reason",
-              "displayName": "reason",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "existing_labels",
-              "displayName": "existing_labels",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "source",
-              "displayName": "source",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "applied",
-              "displayName": "applied",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            }
+            { "id": "timestamp", "displayName": "timestamp", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "message_id", "displayName": "message_id", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "thread_id", "displayName": "thread_id", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "from_email", "displayName": "from_email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "from_domain", "displayName": "from_domain", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "subject", "displayName": "subject", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "snippet", "displayName": "snippet", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "a_label", "displayName": "a_label", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "b_label", "displayName": "b_label", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "confidence", "displayName": "confidence", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "reason", "displayName": "reason", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "existing_labels", "displayName": "existing_labels", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "source", "displayName": "source", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "applied", "displayName": "applied", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
@@ -432,76 +320,20 @@
           },
           "matchingColumns": [],
           "schema": [
-            {
-              "id": "timestamp",
-              "displayName": "timestamp",
-              "type": "string"
-            },
-            {
-              "id": "message_id",
-              "displayName": "message_id",
-              "type": "string"
-            },
-            {
-              "id": "thread_id",
-              "displayName": "thread_id",
-              "type": "string"
-            },
-            {
-              "id": "from_email",
-              "displayName": "from_email",
-              "type": "string"
-            },
-            {
-              "id": "from_domain",
-              "displayName": "from_domain",
-              "type": "string"
-            },
-            {
-              "id": "subject",
-              "displayName": "subject",
-              "type": "string"
-            },
-            {
-              "id": "snippet",
-              "displayName": "snippet",
-              "type": "string"
-            },
-            {
-              "id": "a_label",
-              "displayName": "a_label",
-              "type": "string"
-            },
-            {
-              "id": "b_label",
-              "displayName": "b_label",
-              "type": "string"
-            },
-            {
-              "id": "confidence",
-              "displayName": "confidence",
-              "type": "string"
-            },
-            {
-              "id": "reason",
-              "displayName": "reason",
-              "type": "string"
-            },
-            {
-              "id": "existing_labels",
-              "displayName": "existing_labels",
-              "type": "string"
-            },
-            {
-              "id": "source",
-              "displayName": "source",
-              "type": "string"
-            },
-            {
-              "id": "applied",
-              "displayName": "applied",
-              "type": "string"
-            }
+            { "id": "timestamp", "displayName": "timestamp", "type": "string" },
+            { "id": "message_id", "displayName": "message_id", "type": "string" },
+            { "id": "thread_id", "displayName": "thread_id", "type": "string" },
+            { "id": "from_email", "displayName": "from_email", "type": "string" },
+            { "id": "from_domain", "displayName": "from_domain", "type": "string" },
+            { "id": "subject", "displayName": "subject", "type": "string" },
+            { "id": "snippet", "displayName": "snippet", "type": "string" },
+            { "id": "a_label", "displayName": "a_label", "type": "string" },
+            { "id": "b_label", "displayName": "b_label", "type": "string" },
+            { "id": "confidence", "displayName": "confidence", "type": "string" },
+            { "id": "reason", "displayName": "reason", "type": "string" },
+            { "id": "existing_labels", "displayName": "existing_labels", "type": "string" },
+            { "id": "source", "displayName": "source", "type": "string" },
+            { "id": "applied", "displayName": "applied", "type": "string" }
           ]
         },
         "options": {}
@@ -584,153 +416,93 @@
       "name": "Schedule Trigger"
     }
   ],
-  "pinData": {},
   "connections": {
     "Search Missed Emails": {
       "main": [
         [
-          {
-            "node": "Safety Filter",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Safety Filter", "type": "main", "index": 0 }
         ]
       ]
     },
     "Safety Filter": {
       "main": [
         [
-          {
-            "node": "If No Results",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "If No Results", "type": "main", "index": 0 }
         ]
       ]
     },
     "If No Results": {
       "main": [
         [
-          {
-            "node": "No Results Message",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "No Results Message", "type": "main", "index": 0 }
         ],
         [
-          {
-            "node": "Classify Email",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Classify Email", "type": "main", "index": 0 }
         ]
       ]
     },
     "Classify Email": {
       "main": [
         [
-          {
-            "node": "Parse AI Response",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Parse AI Response", "type": "main", "index": 0 }
         ]
       ]
     },
     "Parse AI Response": {
       "main": [
         [
-          {
-            "node": "If Skip",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "If Skip", "type": "main", "index": 0 }
         ]
       ]
     },
     "If Skip": {
       "main": [
         [
-          {
-            "node": "Log Skipped to Audit",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Log Skipped to Audit", "type": "main", "index": 0 }
         ],
         [
-          {
-            "node": "Get Gmail Labels",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Get Gmail Labels", "type": "main", "index": 0 }
         ]
       ]
     },
     "Get Gmail Labels": {
       "main": [
         [
-          {
-            "node": "Map Label Names to IDs",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Map Label Names to IDs", "type": "main", "index": 0 }
         ]
       ]
     },
     "Map Label Names to IDs": {
       "main": [
         [
-          {
-            "node": "Apply Labels",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Apply Labels", "type": "main", "index": 0 }
         ]
       ]
     },
     "Apply Labels": {
       "main": [
         [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Code in JavaScript", "type": "main", "index": 0 }
         ]
       ]
     },
     "Code in JavaScript": {
       "main": [
         [
-          {
-            "node": "Log Applied to Audit",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Log Applied to Audit", "type": "main", "index": 0 }
         ]
       ]
     },
     "Schedule Trigger": {
       "main": [
         [
-          {
-            "node": "Search Missed Emails",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Search Missed Emails", "type": "main", "index": 0 }
         ]
       ]
     }
   },
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": false
-  },
-  "versionId": "dad4c8ee-6ad8-4394-8885-22ff5c5c9a58",
+  "pinData": {},
   "meta": {
     "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
-  },
-  "id": "ObGIqz3s2agBncih4osDo",
-  "tags": []
+  }
 }
