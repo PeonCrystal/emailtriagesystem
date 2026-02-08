@@ -15,6 +15,23 @@
 
 ## 2026
 
+### [2026-02-08] - TAG-SYS Label Cleanup Workflow (Make.com)
+**Component:** New Make.com scenario — `TAG-SYS Label Cleanup (Daily).json`
+**Description:** Scheduled daily cleanup that strips TAG-SYS labels from threads no longer in the Inbox (archived > 2 days). Reduces label clutter (e.g., OPS had 86 tagged threads, Personal 31, most not in Inbox). Also strips Notifications label from archived threads. Receipts 2026 is handled separately — marked as read after 2 days but labels are preserved for tax records.
+**Reason:** Label counts were inflated by old archived threads, making label sidebar unreliable as a work queue
+**Impact:** All TAG-SYS A-labels, B-labels, and Notifications cleaned from archived threads; Receipts 2026 marked as read only
+**Rollback:** Disable the Make.com scenario
+**Status:** ⏳ Ready to import — requires Gmail connection + Notifications label ID
+
+**Routes:**
+- Sales: strips A-label + NEEDS-INFO, QUOTE, INVOICE, LOST
+- CS: strips A-label + ROUTE-CS, INVOLVED, DELEGATED
+- Personal, OPS, GOV, Payable, Receivable, Unsure: strips A-label
+- Notifications: strips label
+- Receipts 2026: mark as read only (labels preserved)
+
+---
+
 ### [2026-02-08] - Workflow Conflict Prevention & Repo Cleanup
 **Component:** Contact Us Form Autoresponder, Following Up Reply Automator, Main Email Triage System, Needs Info to Quote Agent, repo structure
 **Description:** Fixed three categories of workflow conflicts:

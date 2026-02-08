@@ -1,0 +1,444 @@
+{
+  "name": "TAG-SYS Label Cleanup (Daily)",
+  "flow": [
+    {
+      "id": 1,
+      "module": "builtin:BasicScheduler",
+      "version": 1,
+      "parameters": {
+        "type": "day",
+        "time": "02:00"
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": { "x": 0, "y": 0 },
+        "restore": {},
+        "parameters": [
+          {
+            "name": "type",
+            "type": "select",
+            "label": "Interval",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "mapper": null,
+      "metadata": {
+        "designer": { "x": 300, "y": 0 }
+      },
+      "routes": [
+        {
+          "name": "Sales (strip A + B labels)",
+          "flow": [
+            {
+              "id": 10,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/Sales -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": -600 },
+                "expect": [
+                  { "name": "query", "type": "text", "label": "Query" },
+                  { "name": "maxResults", "type": "number", "label": "Maximum number of results" }
+                ]
+              }
+            },
+            {
+              "id": 11,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{10.id}}",
+                "removeLabels": [
+                  "Label_6987809646185878109",
+                  "Label_6992024041184135133",
+                  "Label_2227810883237687599",
+                  "Label_5719591592693262311",
+                  "Label_6620902005591924255"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": -600 },
+                "note": "Remove: TAG-SYS/Sales, NEEDS-INFO, QUOTE, INVOICE, LOST"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CS (strip A + B labels)",
+          "flow": [
+            {
+              "id": 20,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/CS -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": -400 }
+              }
+            },
+            {
+              "id": 21,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{20.id}}",
+                "removeLabels": [
+                  "Label_8558316024490148552",
+                  "Label_1540280282738845396",
+                  "Label_3917960758757248870",
+                  "Label_4445720407385800790"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": -400 },
+                "note": "Remove: TAG-SYS/CS, ROUTE-CS, INVOLVED, DELEGATED"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Personal (strip A label)",
+          "flow": [
+            {
+              "id": 30,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/Personal -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": -200 }
+              }
+            },
+            {
+              "id": 31,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{30.id}}",
+                "removeLabels": [
+                  "Label_857385070691210960"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": -200 },
+                "note": "Remove: TAG-SYS/Personal"
+              }
+            }
+          ]
+        },
+        {
+          "name": "OPS (strip A label)",
+          "flow": [
+            {
+              "id": 40,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/OPS -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": 0 }
+              }
+            },
+            {
+              "id": 41,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{40.id}}",
+                "removeLabels": [
+                  "Label_7957527206812753254"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": 0 },
+                "note": "Remove: TAG-SYS/OPS"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GOV (strip A label)",
+          "flow": [
+            {
+              "id": 50,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/GOV -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": 200 }
+              }
+            },
+            {
+              "id": 51,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{50.id}}",
+                "removeLabels": [
+                  "Label_6961513130559113764"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": 200 },
+                "note": "Remove: TAG-SYS/GOV"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payable (strip A label)",
+          "flow": [
+            {
+              "id": 60,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/Payable -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": 400 }
+              }
+            },
+            {
+              "id": 61,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{60.id}}",
+                "removeLabels": [
+                  "Label_1704140087250900848"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": 400 },
+                "note": "Remove: TAG-SYS/Payable"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Receivable (strip A label)",
+          "flow": [
+            {
+              "id": 70,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/Receivable -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": 600 }
+              }
+            },
+            {
+              "id": 71,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{70.id}}",
+                "removeLabels": [
+                  "Label_427355719247324158"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": 600 },
+                "note": "Remove: TAG-SYS/Receivable"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unsure (strip A label)",
+          "flow": [
+            {
+              "id": 80,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/Unsure -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": 800 }
+              }
+            },
+            {
+              "id": 81,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{80.id}}",
+                "removeLabels": [
+                  "Label_7350470234196832677"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": 800 },
+                "note": "Remove: TAG-SYS/Unsure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notifications (strip label)",
+          "flow": [
+            {
+              "id": 90,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:Notifications -in:inbox older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": 1000 }
+              }
+            },
+            {
+              "id": 91,
+              "module": "google-email:ActionModifyLabels",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{90.id}}",
+                "removeLabels": [
+                  "__NOTIFICATIONS_LABEL_ID__"
+                ]
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": 1000 },
+                "note": "Remove: Notifications — REPLACE __NOTIFICATIONS_LABEL_ID__ with your actual Gmail label ID"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Receipts 2026 (mark as read ONLY — keep labels)",
+          "flow": [
+            {
+              "id": 100,
+              "module": "google-email:ActionSearchMails",
+              "version": 2,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "query": "label:TAG-SYS/Receipts-2026 -in:inbox is:unread older_than:2d",
+                "maxResults": "200"
+              },
+              "metadata": {
+                "designer": { "x": 600, "y": 1200 }
+              }
+            },
+            {
+              "id": 101,
+              "module": "google-email:ActionMarkAsRead",
+              "version": 1,
+              "parameters": {
+                "account": "__GMAIL_CONNECTION_ID__"
+              },
+              "mapper": {
+                "id": "{{100.id}}"
+              },
+              "metadata": {
+                "designer": { "x": 900, "y": 1200 },
+                "note": "Mark as read only — labels are preserved for tax records"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "instant": false,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    }
+  }
+}
