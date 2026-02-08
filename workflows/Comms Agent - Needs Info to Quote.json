@@ -94,7 +94,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        4000,
+        4224,
         -368
       ],
       "id": "966dc2b5-d7df-4676-8b92-edb7400601c6",
@@ -123,7 +123,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        4224,
+        4448,
         -80
       ],
       "id": "17fb644b-b8e9-4bd4-b45e-fb0e2229249e",
@@ -150,7 +150,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        2528,
+        2752,
         -368
       ],
       "id": "ff024ade-cb7c-453e-9d64-6048d5210ee2",
@@ -553,7 +553,7 @@
       "type": "n8n-nodes-base.pipedrive",
       "typeVersion": 1,
       "position": [
-        3776,
+        4000,
         -368
       ],
       "id": "5782c997-3ba1-4a1d-b28f-113977e503e0",
@@ -617,7 +617,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3104,
+        3328,
         -368
       ],
       "id": "00ad63ab-3c9e-4667-b8f3-11e43e7cbb06",
@@ -631,7 +631,7 @@
       "type": "n8n-nodes-base.pipedrive",
       "typeVersion": 1,
       "position": [
-        3328,
+        3552,
         -368
       ],
       "id": "5e03d70b-91bf-4a5c-bc87-ab9de9f49dd1",
@@ -670,7 +670,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2,
       "position": [
-        2752,
+        2976,
         -368
       ],
       "id": "67f605f6-9612-498c-92a1-17038b3e65e6",
@@ -979,11 +979,39 @@
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        3552,
+        3776,
         -368
       ],
       "id": "03eccce1-4cde-40be-b903-3368349d1cd5",
       "name": "Limit"
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $('Get a message').item.json.threadId }}",
+        "labelIds": [
+          "Label_8558316024490148552",
+          "Label_1540280282738845396",
+          "Label_3917960758757248870",
+          "Label_4445720407385800790"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2528,
+        -368
+      ],
+      "id": "62abf56f-d462-46f1-84c3-c2148090bde7",
+      "name": "Remove label from thread1",
+      "webhookId": "57d20cf2-3dfa-43d5-a29a-dc990b6beebc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -1295,7 +1323,7 @@
       "main": [
         [
           {
-            "node": "Create a draft",
+            "node": "Remove label from thread1",
             "type": "main",
             "index": 0
           }
@@ -1367,6 +1395,17 @@
           }
         ]
       ]
+    },
+    "Remove label from thread1": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1376,7 +1415,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "errorWorkflow": "ODmvYJ8wvhvQCqKJ"
   },
-  "versionId": "fa282977-79c4-45d4-9e65-69a8c5ef9dcc",
+  "versionId": "cbcf6bd0-0f60-4b13-918f-d0a0395cfb7a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
