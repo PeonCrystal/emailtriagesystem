@@ -1,0 +1,87 @@
+# Shipping Automation System - Git Ignore
+
+# API Keys and Credentials
+*.key
+*.pem
+*.env
+.env.*
+credentials.json
+secrets.json
+config.local.json
+
+# Make.com Sensitive Data
+*_credentials_*.json
+*_apikey_*.json
+*_token_*.json
+
+# QuickBooks OAuth
+qbo_*.json
+quickbooks_tokens/
+
+# Monday.com Webhooks (contains sensitive IDs)
+webhook_config.json
+
+# Shipping Carrier Credentials
+easypost_*.json
+shipengine_*.json
+stamps_*.json
+usps_*.json
+fedex_*.json
+ups_*.json
+
+# Development and Testing
+test_orders/
+scratch/
+*.tmp
+*.bak
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Documentation Drafts
+drafts/
+notes.txt
+TODO.txt
+
+# Large exports (keep blueprints, exclude data)
+data_exports/
+order_history_*.csv
+customer_data_*.json
+
+# Backup Files
+backups/
+*.backup
+*_old.*
+*_backup.*
+
+# Node modules (if any local tooling added)
+node_modules/
+npm-debug.log
+
+# Python (if any scripts added)
+__pycache__/
+*.py[cod]
+venv/
+env/
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Temporary Make.com exports with sensitive data
+*_with_credentials_*.json
+scenario_export_temp/
