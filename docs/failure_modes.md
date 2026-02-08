@@ -78,6 +78,7 @@
 **Symptom:** Thread has multiple B-labels (e.g., `needs-info` + `quote`)
 **Cause:** Label Logic Controller didn't run or failed
 **Impact:** Downstream workflows fire incorrectly (double-send emails, wrong state)
+**Note:** Cross-category conflicts (Sales + CS labels on same thread) are now prevented by inline label cleanup — see label_state_machine.md "Sales/CS Mutual Exclusivity". Same-category conflicts (e.g., `needs-info` + `quote`) are still handled by the Label Logic Controller.
 
 **Mitigation:**
 - Alert if thread has >1 B-label (daily audit)
@@ -99,7 +100,17 @@ Gmail search: label:needs-info label:quote
 
 ---
 
-### 5. A-Label Misclassification Cascade
+### 5. Orphaned B-Labels (RESOLVED)
+
+**Symptom:** B-labels (NEEDS-INFO, ROUTE-CS) applied without parent A-label, silently stripped by Label Logic Controller within 10 minutes
+**Cause:** Contact Us Form Autoresponder and Following Up Reply Automator applied B-labels directly without applying A-labels first
+**Impact:** Contact form submissions and unhappy follow-up replies silently lost — never routed to CS or Sales agents
+**Resolution:** Added A-label nodes before B-label application in both workflows (2026-02-08)
+**Status:** Resolved ✅
+
+---
+
+### 6. A-Label Misclassification Cascade
 
 **Symptom:** Sales email classified as CS, routed to wrong team
 **Cause:** OpenAI confidence score too low, default logic applied
@@ -127,7 +138,7 @@ Gmail search: label:needs-info label:quote
 
 ## Medium-Impact Failures (Workflow Disruption)
 
-### 6. Pipedrive Sync Failure
+### 7. Pipedrive Sync Failure
 
 **Symptom:** B-label changes in Gmail don't sync to Pipedrive CRM
 **Cause:** Pipedrive API error, credential expiry, workflow bug
@@ -153,7 +164,7 @@ Gmail search: label:needs-info label:quote
 
 ---
 
-### 7. Email Thread Fragmentation
+### 8. Email Thread Fragmentation
 
 **Symptom:** Replies in same conversation treated as new threads
 **Cause:** Gmail doesn't recognize reply (missing `In-Reply-To` header)
@@ -182,7 +193,7 @@ Gmail search: subject:[partial subject] label:needs-info
 
 ## Low-Impact Failures (Minor Issues)
 
-### 8. Delayed Processing (>1 Hour)
+### 9. Delayed Processing (>1 Hour)
 
 **Symptom:** Email arrives but not classified for 1+ hours
 **Cause:** n8n polling interval, workflow backlog, API slowness
@@ -208,7 +219,7 @@ Gmail search: subject:[partial subject] label:needs-info
 
 ---
 
-### 9. False Positive "Urgent" Flags
+### 10. False Positive "Urgent" Flags
 
 **Symptom:** Non-urgent emails tagged as urgent
 **Cause:** OpenAI over-sensitive to keywords ("ASAP", "urgent")
@@ -233,7 +244,7 @@ Gmail search: subject:[partial subject] label:needs-info
 
 ---
 
-### 10. Duplicate Email Processing
+### 11. Duplicate Email Processing
 
 **Symptom:** Same email processed twice, labels applied twice
 **Cause:** n8n workflow re-triggered, no idempotency check
@@ -294,5 +305,5 @@ curl https://status.openai.com/api/v2/status.json
 
 ---
 
-**Last Updated:** [Today's Date]
-**Incident Log:** See CHANGE_LOG.md for historical failures
+**Last Updated:** 2026-02-08
+**Incident Log:** See change_log.md for historical failures

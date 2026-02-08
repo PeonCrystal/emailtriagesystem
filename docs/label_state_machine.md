@@ -90,6 +90,33 @@ ESCALATION PATH:
 | `needs-info` + `quote` | Mutually exclusive states | Keep most recent B-label |
 | `quote` + `invoice` | Can't be both | Investigate: likely thread transition |
 | `route-cs` + `cs-involved` | Can't be both | Keep most recent B-label |
+| Any Sales B-label + Any CS B-label | Cross-category conflict | See Sales/CS Mutual Exclusivity below |
+
+### Sales/CS Mutual Exclusivity (Inline Enforcement)
+
+Sales and CS labels are mutually exclusive at the category level. A thread cannot be both a Sales matter and a CS matter simultaneously. This is enforced **inline at the point of B-label application**, not just by the Label Logic Controller.
+
+**Rule:** When applying a Sales B-label, first remove all CS labels. When applying a CS B-label, first remove all Sales labels.
+
+**Sales labels (stripped when applying CS):**
+- `TAG-SYS/Sales`
+- `TAG-SYS/Sales/NEEDS-INFO`
+- `TAG-SYS/Sales/QUOTE`
+- `TAG-SYS/Sales/INVOICE`
+- `TAG-SYS/Sales/LOST`
+
+**CS labels (stripped when applying Sales):**
+- `TAG-SYS/CS`
+- `TAG-SYS/CS/ROUTE-CS`
+- `TAG-SYS/CS/INVOLVED`
+- `TAG-SYS/CS/DELEGATED`
+
+**Where enforced:**
+- Main Email Triage System — before any B-label application
+- Contact Us Form Autoresponder — on each branch of the Switch node
+- Needs Info to Quote Agent — before draft creation
+
+**Why inline, not just the controller:** The Label Logic Controller runs every 10 minutes. Without inline enforcement, there is a window where both Sales and CS agents could see the same thread and fire conflicting auto-replies.
 
 ---
 
@@ -141,7 +168,7 @@ invoice →  quote:
 
 ## Label Logic Controller Rules
 
-### Enforcement Logic (Runs Every 3 Minutes)
+### Enforcement Logic (Runs Every 10 Minutes)
 ```javascript
 // Pseudo-code for Label Logic Controller
 
@@ -251,5 +278,5 @@ Every conflict resolution logs:
 
 ---
 
-**Last Updated:** [Today's Date]
-**See Also:** SYSTEM_ARCHITECTURE.md, FAILURE_MODES.md
+**Last Updated:** 2026-02-08
+**See Also:** system_architecture.md, failure_modes.md

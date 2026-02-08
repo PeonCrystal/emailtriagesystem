@@ -13,6 +13,28 @@
 
 ---
 
+## 2026
+
+### [2026-02-08] - Workflow Conflict Prevention & Repo Cleanup
+**Component:** Contact Us Form Autoresponder, Following Up Reply Automator, Main Email Triage System, Needs Info to Quote Agent, repo structure
+**Description:** Fixed three categories of workflow conflicts:
+1. **Orphaned B-labels:** Contact Us Form Autoresponder and Following Up Reply Automator were applying B-labels (NEEDS-INFO, ROUTE-CS) without parent A-labels. Label Logic Controller was silently stripping them. Fixed by adding A-label nodes (TAG-SYS/Sales, TAG-SYS/CS) before B-label application in both workflows.
+2. **Sales/CS cross-contamination:** When a thread transitions from Sales to CS (or vice versa), the old category's labels were left behind, allowing multiple downstream workflows to fire on the same thread. Fixed by adding inline label cleanup at the point of B-label application — applying a CS B-label now strips all Sales labels first, and vice versa. This is done upstream (in the Main Triage and Contact Form Autoresponder) so downstream agents never see conflicting labels.
+3. **Repo cleanup:** Converted RTF docs to Markdown, Excel to CSV, added .gitignore, removed duplicate workflow files.
+
+**Reason:** Prevent silent routing failures and duplicate auto-replies to customers
+**Impact:** All contact form submissions and follow-up replies now route correctly; no more cross-category label conflicts
+**Rollback:** Remove the new A-label and label-cleanup nodes from affected workflows
+**Status:** ✅ Deployed
+
+**Workflows Modified:**
+- Contact Us Form Autoresponder: Added "Add Sales A-Label" and "Add CS A-Label" nodes; added cross-category label removal on each branch
+- Following Up Reply Automator: Added "Add CS A-Label" node on unhappy path
+- Main Email Triage System: Added "Remove CS Labels" before Sales B-label application; added "Remove Sales Labels" before CS B-label application
+- Needs Info to Quote Agent: Added "Remove CS Labels" before draft creation
+
+---
+
 ## 2025
 
 ### [2025-02-05] - Cleanup Logic Deployment
@@ -179,5 +201,5 @@ if (bLabelConfidence > 85) { // Separate threshold
 
 ---
 
-**Last Updated:** [Today's Date]
+**Last Updated:** 2026-02-08
 **Review Cycle:** Update after every change, full review monthly
