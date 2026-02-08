@@ -1,0 +1,720 @@
+{
+  "name": "TAG-SYS Label Cleanup (Daily)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Daily 2AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        1104
+      ],
+      "id": "7aeb573d-4dcf-4843-b692-ed7a39c5520d"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/Sales -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search Sales",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c25b91c1-7ae4-4f37-b4eb-5b695c8cae32",
+      "webhookId": "d0206c56-35f6-416f-9013-e389eb64f1b4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_6987809646185878109",
+          "Label_6992024041184135133",
+          "Label_2227810883237687599",
+          "Label_5719591592693262311",
+          "Label_6620902005591924255"
+        ]
+      },
+      "name": "Strip Sales + B-Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "5c4b55c8-a274-41dc-87b9-5590cce183bf",
+      "webhookId": "ed81e0a6-f78d-4f35-97ae-d491e0e64e81",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/CS -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search CS",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        224
+      ],
+      "id": "881410b7-872c-4349-b9ec-dd1164dfd823",
+      "webhookId": "9a81a3a5-3493-4324-994f-24b9e448cb2d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_8558316024490148552",
+          "Label_1540280282738845396",
+          "Label_3917960758757248870",
+          "Label_4445720407385800790"
+        ]
+      },
+      "name": "Strip CS + B-Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        224
+      ],
+      "id": "bc9245b0-a796-4ec4-9e85-738d4ca45112",
+      "webhookId": "0f73cee4-db0f-4b7b-8805-51c134e735bc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/Personal -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search Personal",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        448
+      ],
+      "id": "9e2db3f7-87d4-4009-82e6-68c62cc75dfa",
+      "webhookId": "5b1c3e0f-2f56-4c10-8d79-0779bd9233a0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_857385070691210960"
+        ]
+      },
+      "name": "Strip Personal Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        448
+      ],
+      "id": "3497dd55-dd0e-4d96-b47f-6ec4b77e0d8e",
+      "webhookId": "88498a19-54ab-48b2-9447-06151d7ada74",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/OPS -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search OPS",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        672
+      ],
+      "id": "1fb8d137-fc7f-4dff-a5ef-142ccad03867",
+      "webhookId": "d997dd66-fe29-4d2e-94dd-9906f5ea7097",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_7957527206812753254"
+        ]
+      },
+      "name": "Strip OPS Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        672
+      ],
+      "id": "98024839-4c9f-4902-b117-8a1b1ae58e67",
+      "webhookId": "c1158809-6b05-4e89-88fb-58515c4bab57",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/GOV -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search GOV",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        880
+      ],
+      "id": "300e0e49-8cb2-4975-aba7-a7c2d5a7a252",
+      "webhookId": "e01b5492-8e52-4aae-90ae-db77d4dfeb0c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_6961513130559113764"
+        ]
+      },
+      "name": "Strip GOV Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        880
+      ],
+      "id": "72ebd026-465b-4cb6-9ebb-08cb6395a98e",
+      "webhookId": "48f2c111-4fcd-4d24-8281-936bac676790",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/Payable -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search Payable",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        1104
+      ],
+      "id": "ae37e39a-669b-42ce-8b84-12f4840609c4",
+      "webhookId": "8e26ea0f-e740-41b8-86fb-f5647b6dd088",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_1704140087250900848"
+        ]
+      },
+      "name": "Strip Payable Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        1104
+      ],
+      "id": "faedb7f1-e077-4139-b5d3-b22be40ece85",
+      "webhookId": "e880c079-84ee-4765-8aa6-d86126bde90a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/Receivable -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search Receivable",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        1328
+      ],
+      "id": "bf5b12f3-8ed5-4bb5-9b97-6f238def2104",
+      "webhookId": "512ce61a-8443-43fe-a26d-879984b8f5d3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_427355719247324158"
+        ]
+      },
+      "name": "Strip Receivable Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        1328
+      ],
+      "id": "244f93ca-99fa-4c1b-ae28-8f8a5a7326d9",
+      "webhookId": "e7673c95-c6e4-43af-9ccc-7821bb91abc9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/Unsure -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search Unsure",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        1552
+      ],
+      "id": "8913f67e-cfe2-413b-af19-246b70aed72b",
+      "webhookId": "6eb2af69-e195-439c-92c8-128c28fea92c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "Label_7350470234196832677"
+        ]
+      },
+      "name": "Strip Unsure Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        1552
+      ],
+      "id": "01c42bb8-171a-4160-a9b8-9368d33d7ba7",
+      "webhookId": "f87188d0-0ae6-4d67-a040-76af064a66db",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:Notifications -in:inbox older_than:2d"
+        }
+      },
+      "name": "Search Notifications",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        1760
+      ],
+      "id": "0268132c-8d14-4e78-be58-8eb63563f4bd",
+      "webhookId": "17cc7ceb-0489-4af1-80f8-16a581097b07",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "removeLabels",
+        "threadId": "={{ $json.threadId }}",
+        "labelIds": [
+          "__NOTIFICATIONS_LABEL_ID__"
+        ]
+      },
+      "name": "Strip Notifications Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        1760
+      ],
+      "id": "482272ec-40e8-4199-9e66-72f951e768e3",
+      "webhookId": "d6c578ed-7005-48e7-96fe-f1f7af531ede",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "filters": {
+          "q": "label:TAG-SYS/Receipts-2026 -in:inbox is:unread older_than:2d"
+        }
+      },
+      "name": "Search Receipts 2026",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        1984
+      ],
+      "id": "e5da803a-e135-44dd-acc3-c102a549034c",
+      "webhookId": "5978783d-3612-4c36-88e6-d282c9849728",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $json.id }}"
+      },
+      "name": "Mark Receipts as Read",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        1984
+      ],
+      "id": "695f054d-2c16-419a-b409-6b795f05bf50",
+      "webhookId": "1c81696c-8884-4530-adda-41b39677cbba",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## TAG-SYS - LABEL CLEANUP\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)",
+        "height": 576,
+        "width": 736
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        448
+      ],
+      "id": "de12a4fb-8b24-454c-9277-ddcbeff3fd29",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 2AM": {
+      "main": [
+        [
+          {
+            "node": "Search Sales",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search CS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Personal",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search OPS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search GOV",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Payable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Receivable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Unsure",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Notifications",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Receipts 2026",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Sales": {
+      "main": [
+        [
+          {
+            "node": "Strip Sales + B-Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search CS": {
+      "main": [
+        [
+          {
+            "node": "Strip CS + B-Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Personal": {
+      "main": [
+        [
+          {
+            "node": "Strip Personal Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search OPS": {
+      "main": [
+        [
+          {
+            "node": "Strip OPS Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search GOV": {
+      "main": [
+        [
+          {
+            "node": "Strip GOV Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Payable": {
+      "main": [
+        [
+          {
+            "node": "Strip Payable Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Receivable": {
+      "main": [
+        [
+          {
+            "node": "Strip Receivable Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Unsure": {
+      "main": [
+        [
+          {
+            "node": "Strip Unsure Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Notifications": {
+      "main": [
+        [
+          {
+            "node": "Strip Notifications Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Receipts 2026": {
+      "main": [
+        [
+          {
+            "node": "Mark Receipts as Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "5ab057bc-8d26-4341-b91e-0678ae192e3c",
+  "meta": {
+    "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
+  },
+  "id": "9okQHBm0MvtJdhA0Zjr9p",
+  "tags": [
+    {
+      "updatedAt": "2025-09-18T21:07:48.004Z",
+      "createdAt": "2025-09-18T21:07:48.004Z",
+      "id": "la3xBPTfmFJpCXec",
+      "name": "COMMS"
+    }
+  ]
+}
