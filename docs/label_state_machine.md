@@ -71,6 +71,89 @@ ESCALATION PATH:
 
 ---
 
+## OPS Sub-Label Handling (New — Automation Lanes)
+
+OPS emails previously had no B-labels — they were classification-only. Now, OPS has two sub-labels that act as **handling lanes**, driving specific automation behavior without touching the core Sales/CS state machines.
+
+### Why Sub-Labels (Not Sub-Scenarios)
+
+The alternative was to trigger different n8n scenarios when `TAG-SYS/OPS` gets applied, using code nodes to inspect the sender/subject and branch. The problem: that logic lives buried in workflow JSON, is invisible from Gmail, and scales poorly (every new OPS email type = another code branch).
+
+**Sub-labels keep it clean because:**
+1. **Visible in Gmail** — you can see `OPS/ALERT` and `OPS/DIGEST` in the sidebar, filter by them, and know exactly what handling an email is getting
+2. **Gmail filters do the routing** — a new sender that fits the ALERT pattern just needs one Gmail filter rule, no n8n changes
+3. **n8n workflows stay generic** — one workflow handles ALL `OPS/ALERT` emails the same way (forward + delayed archive), another handles ALL `OPS/DIGEST` emails (24h retention + 6 AM archive)
+4. **Won't get messy** — there are only 2-3 handling patterns for OPS (alert, digest, and plain/unhandled). New senders map to existing patterns. You're not creating a sub-label per sender — you're creating a sub-label per **behavior**.
+
+### Keeping It From Getting Messy — The Rule
+
+> **Sub-labels represent handling patterns, not senders.**
+
+- `TAG-SYS/OPS/ALERT` = "forward somewhere + archive after delay" (n8n errors, future: server alerts, monitoring)
+- `TAG-SYS/OPS/DIGEST` = "keep latest in inbox, archive at 6 AM" (daily breakdowns, future: weekly reports)
+- `TAG-SYS/OPS` (no sub-label) = "classify only, no automation" (vendor chatter, staff emails, general ops)
+
+If a new email type doesn't fit ALERT or DIGEST, it stays plain OPS. Only add a new sub-label when you have a genuinely **new handling pattern** — not a new sender.
+
+### OPS/ALERT State Machine
+```
+┌──────────────────┐
+│   [Email Arrives]  │
+└────────┬─────────┘
+         │
+         │  Gmail filter applies TAG-SYS/OPS/ALERT
+         │  Gmail filter forwards to designated recipient
+         │
+         ▼
+┌──────────────────┐
+│   IN INBOX        │  Stays visible for 15 minutes minimum
+│   (forwarded)     │
+└────────┬─────────┘
+         │
+         │  n8n: OPS Alert Handler (runs every 5 min)
+         │  Checks: is email >15 min old AND has OPS/ALERT label?
+         │
+         ▼
+┌──────────────────┐
+│   [ARCHIVED]      │  Removed from inbox, label preserved
+└──────────────────┘
+```
+
+**Current ALERT senders:**
+- n8n error notifications → forward to nsmajumder@gmail.com
+
+### OPS/DIGEST State Machine
+```
+┌──────────────────┐
+│   [Email Arrives]  │  e.g., daily breakdown
+└────────┬─────────┘
+         │
+         │  Gmail filter applies TAG-SYS/OPS/DIGEST
+         │  Email stays UNREAD and UNTOUCHED
+         │
+         ▼
+┌──────────────────┐
+│   IN INBOX        │  Visible for ~24 hours
+│   (unread)        │
+└────────┬─────────┘
+         │
+         │  TAG-SYS Label Cleanup (Daily at 6 AM)
+         │  Archives all OPS/DIGEST emails
+         │  (by then, next day's digest has arrived or is coming)
+         │
+         ▼
+┌──────────────────┐
+│   [ARCHIVED]      │  Only current day's digest remains in inbox
+└──────────────────┘
+
+Result: At most ONE daily breakdown visible at any time.
+```
+
+**Current DIGEST senders:**
+- Daily breakdown emails
+
+---
+
 ## A-Label Combinations (Can Co-Exist)
 
 ### Common Patterns

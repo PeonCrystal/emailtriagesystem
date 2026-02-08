@@ -39,3 +39,6 @@ Skip inbox,from:(orders-ca@ssactivewear.com) subject:Shipment,Skip Inbox,,,False
 Monday.com notifications,via monday.com,Mark as read,,,True,False,False,False,False
 Notifications,from:(calendar-notification@google.com OR @calendly.com OR @tidycal.com OR pkginfo@ups.com OR CloudPlatform-noreply@google.com OR support@dhl.com),"Apply label ""Notifications""",Notifications,,False,False,False,False,False
 Notifications,from:(admin@dadsprinting.com) subject:(Missing Fields for Order),"Apply label ""Notifications""",Notifications,,False,False,False,False,False
+n8n error alerts,from:(n8n) subject:(ERROR OR error OR failed OR Failed),"Apply label ""TAG-SYS/OPS/ALERT"", Forward to nsmajumder@gmail.com",TAG-SYS/OPS/ALERT,nsmajumder@gmail.com,False,False,False,False,False
+eSignatures.io,from:(@esignatures.io),"Apply label ""TAG-SYS/Payable""",TAG-SYS/Payable,,False,False,False,False,False
+Daily breakdown,subject:(Daily Breakdown OR daily breakdown OR Daily Summary),"Apply label ""TAG-SYS/OPS/DIGEST""",TAG-SYS/OPS/DIGEST,,False,False,False,False,False

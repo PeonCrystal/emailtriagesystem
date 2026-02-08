@@ -15,6 +15,27 @@
 
 ## 2026
 
+### [2026-02-08] - OPS Sub-Label Architecture + New Email Rules
+**Component:** Gmail filters, A-label definitions, B-label definitions, Label State Machine
+**Description:** Introduced OPS sub-labels as automation lanes and added handling rules for three email types:
+
+1. **n8n error alerts** → Gmail filter applies `TAG-SYS/OPS/ALERT`, forwards to nsmajumder@gmail.com. New n8n workflow (OPS Alert Handler) archives after 15-minute delay so the email stays visible briefly before clearing.
+2. **eSignatures.io** → Gmail filter applies `TAG-SYS/Payable` (these are credit purchase reminders).
+3. **Daily breakdown emails** → Gmail filter applies `TAG-SYS/OPS/DIGEST`. Emails stay unread/untouched for 24 hours, then TAG-SYS Label Cleanup archives them at 6 AM. Result: only one daily breakdown visible in inbox at a time.
+
+**Architecture decision — sub-labels as handling patterns:**
+- `TAG-SYS/OPS/ALERT` = forward + delayed archive (any urgent ops alert)
+- `TAG-SYS/OPS/DIGEST` = 24h inbox retention + 6 AM archive (any recurring summary)
+- `TAG-SYS/OPS` (no sub-label) = classification only, no automation
+- Sub-labels represent **behaviors**, not senders — keeps the system from getting messy as new OPS email types are added.
+
+**Reason:** Provide structured handling for OPS emails that previously had no automation; answer architectural question about sub-labels vs sub-scenarios
+**Impact:** 3 new Gmail filter rules, 2 new OPS B-labels, updated label state machine docs. Requires: creating `TAG-SYS/OPS/ALERT` and `TAG-SYS/OPS/DIGEST` labels in Gmail, building OPS Alert Handler workflow in n8n, updating TAG-SYS Label Cleanup to handle DIGEST at 6 AM.
+**Rollback:** Remove the 3 new Gmail filter rules, delete OPS sub-labels
+**Status:** ⏳ Rules documented — requires Gmail label creation + n8n workflow builds
+
+---
+
 ### [2026-02-08] - CATCH-ALL Model Alignment & Issue Closure
 **Component:** CATCH-ALL - Missed Email Recovery workflow
 **Description:** Updated CATCH-ALL classifier from `gpt-4o-mini` to `gpt-5-mini` to match the Main Email Triage System. Also reviewed two previously flagged concerns and confirmed they are non-issues:
