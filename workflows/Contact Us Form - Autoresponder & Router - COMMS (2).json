@@ -29,53 +29,6 @@
     {
       "parameters": {
         "resource": "thread",
-        "operation": "delete",
-        "threadId": "={{ $('Dedup by threadId').item.json.threadId }}"
-      },
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [
-        1152,
-        528
-      ],
-      "id": "2ef81829-d262-412a-afeb-c73dfd969534",
-      "name": "Delete a thread",
-      "webhookId": "704daa7a-9386-4da0-89e1-5df8b5fa4485",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "eeR9kYWgMFeo9vvK",
-          "name": "Gmail - info@"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "thread",
-        "operation": "removeLabels",
-        "threadId": "=={{ $json.threadId }}",
-        "labelIds": [
-          "Label_824305247270003185"
-        ]
-      },
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [
-        992,
-        528
-      ],
-      "id": "b606e022-ff62-4ede-bd6e-bb2c7b8c1842",
-      "name": "Remove label from thread",
-      "webhookId": "b87f7673-7626-452c-88dc-353e83b11579",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "eeR9kYWgMFeo9vvK",
-          "name": "Gmail - info@"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "thread",
         "operation": "addLabels",
         "threadId": "={{ $('Get many messages').item.json.threadId }}",
         "labelIds": [
@@ -85,7 +38,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        1248,
+        1504,
         128
       ],
       "id": "2398cdd3-8ed6-4846-b72c-2ea0353b3fdf",
@@ -228,7 +181,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        1248,
+        1504,
         288
       ],
       "id": "2db43d41-5c88-41f5-8b14-75a57ef94075",
@@ -470,7 +423,9 @@
         "labelIds": [
           "Label_824305247270003185",
           "Label_3917960758757248870",
-          "Label_4445720407385800790"
+          "Label_4445720407385800790",
+          "Label_6987809646185878109",
+          "Label_6992024041184135133"
         ]
       },
       "type": "n8n-nodes-base.gmail",
@@ -529,37 +484,108 @@
       "id": "f91ce767-f11a-4718-9e0a-c6dbf06d3c60",
       "name": "Webhook",
       "webhookId": "e1b93242-59cd-48e0-ab9c-3b0756350ace"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Get many messages').item.json.threadId }}",
+        "labelIds": [
+          "Label_6987809646185878109"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        128
+      ],
+      "id": "a6bad3b6-1e7a-4f6b-9c95-86a7a55891aa",
+      "name": "Add TAG-SYS/Sales Label",
+      "webhookId": "2c12f301-9109-476f-876b-e3c0fa09cf47",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Get many messages').item.json.threadId }}",
+        "labelIds": [
+          "Label_8558316024490148552"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        288
+      ],
+      "id": "cac322a1-c812-407b-ac11-3e3f76ff18b9",
+      "name": "Add TAG-SYS/CS Label",
+      "webhookId": "98483102-f445-4258-9690-0f17fb727322",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $('Get many messages').item.json.threadId }}",
+        "labelIds": [
+          "Label_824305247270003185"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        992,
+        528
+      ],
+      "id": "b606e022-ff62-4ede-bd6e-bb2c7b8c1842",
+      "name": "Remove label from message",
+      "webhookId": "b87f7673-7626-452c-88dc-353e83b11579",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "messageId": "={{ $('Get many messages').item.json.threadId }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1152,
+        528
+      ],
+      "id": "2ef81829-d262-412a-afeb-c73dfd969534",
+      "name": "Delete a message",
+      "webhookId": "704daa7a-9386-4da0-89e1-5df8b5fa4485",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@"
+        }
+      }
     }
   ],
   "pinData": {},
   "connections": {
-    "Remove label from thread": {
-      "main": [
-        [
-          {
-            "node": "Delete a thread",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Remove Contactformlabel2": {
       "main": [
         [
           {
             "node": "Switch1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Delete a thread": {
-      "main": [
-        [
-          {
-            "node": "Search a person",
             "type": "main",
             "index": 0
           }
@@ -628,7 +654,7 @@
         ],
         [
           {
-            "node": "Remove label from thread",
+            "node": "Remove label from message",
             "type": "main",
             "index": 0
           }
@@ -673,7 +699,7 @@
       "main": [
         [
           {
-            "node": "Add To CS Thread (COMMS-CS)",
+            "node": "Add TAG-SYS/CS Label",
             "type": "main",
             "index": 0
           }
@@ -684,7 +710,7 @@
       "main": [
         [
           {
-            "node": "Adds NEEDSINFOLabel",
+            "node": "Add TAG-SYS/Sales Label",
             "type": "main",
             "index": 0
           }
@@ -701,13 +727,57 @@
           }
         ]
       ]
+    },
+    "Add TAG-SYS/Sales Label": {
+      "main": [
+        [
+          {
+            "node": "Adds NEEDSINFOLabel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add TAG-SYS/CS Label": {
+      "main": [
+        [
+          {
+            "node": "Add To CS Thread (COMMS-CS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from message": {
+      "main": [
+        [
+          {
+            "node": "Delete a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a message": {
+      "main": [
+        [
+          {
+            "node": "Search a person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "a9eb1c01-533f-4183-b2fb-48e8610119e9",
+  "versionId": "a62e5070-4a8c-4db4-b9ce-51265e68385f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
