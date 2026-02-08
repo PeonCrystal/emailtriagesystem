@@ -1088,13 +1088,15 @@
         "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
         "labelIds": [
           "Label_3917960758757248870",
-          "Label_4445720407385800790"
+          "Label_4445720407385800790",
+          "Label_6987809646185878109",
+          "Label_6992024041184135133"
         ]
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        4576,
+        4800,
         576
       ],
       "id": "f253575b-4a3b-45ff-b057-424de9403d32",
@@ -1119,7 +1121,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        4800,
+        5008,
         576
       ],
       "id": "fe988186-2854-434d-844a-9256c7ea04e5",
@@ -1139,7 +1141,9 @@
         "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
         "labelIds": [
           "Label_1540280282738845396",
-          "Label_4445720407385800790"
+          "Label_4445720407385800790",
+          "Label_6987809646185878109",
+          "Label_6992024041184135133"
         ]
       },
       "type": "n8n-nodes-base.gmail",
@@ -1397,7 +1401,8 @@
         "operation": "removeLabels",
         "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
         "labelIds": [
-          "INBOX"
+          "INBOX",
+          "Label_4445720407385800790"
         ]
       },
       "type": "n8n-nodes-base.gmail",
@@ -1800,7 +1805,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "35411349-761f-4dcd-b816-9cb35af4ceb2",
+  "versionId": "67d85056-3e1e-462f-b941-35d5555d49c1",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "43efe27bacd7394d71ea054b6774979f825fb8fa5ec3417e3e299d3e8da0956b"
