@@ -15,6 +15,19 @@
 
 ## 2026
 
+### [2026-02-08] - CATCH-ALL Model Alignment & Issue Closure
+**Component:** CATCH-ALL - Missed Email Recovery workflow
+**Description:** Updated CATCH-ALL classifier from `gpt-4o-mini` to `gpt-5-mini` to match the Main Email Triage System. Also reviewed two previously flagged concerns and confirmed they are non-issues:
+1. **CATCH-ALL double-processing (non-issue):** The Gmail search uses `-label:TAG-SYS` which excludes any thread already processed. The AI prompt also returns `skip: true` if TAG-SYS labels exist, and a Safety Filter code node provides a third layer of protection. An email cannot be processed twice.
+2. **Quote Rejected race window (non-issue):** The Quote Rejected agent auto-sends a rejection email without reading or depending on the thread's current label state. The up-to-30-minute delay before it fires has no functional impact — no other workflow acts on the same thread in that window.
+
+**Reason:** Ensure consistent AI classification across all triage paths; close out flagged concerns after analysis
+**Impact:** CATCH-ALL now produces identical classifications to the main triage system
+**Rollback:** Revert CATCH-ALL OpenAI node to `gpt-4o-mini`
+**Status:** ✅ Deployed
+
+---
+
 ### [2026-02-08] - TAG-SYS Label Cleanup Workflow (n8n)
 **Component:** New n8n workflow — `TAG-SYS Label Cleanup (Daily).json`
 **Description:** Scheduled daily cleanup (2 AM) that strips TAG-SYS labels from threads no longer in the Inbox (archived > 2 days). Reduces label clutter (e.g., OPS had 86 tagged threads, Personal 31, most not in Inbox). Also strips Notifications label from archived threads. Receipts 2026 is handled separately — marked as read after 2 days but labels are preserved for tax records.

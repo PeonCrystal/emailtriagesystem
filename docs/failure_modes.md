@@ -269,6 +269,25 @@ Gmail search: subject:[partial subject] label:needs-info
 
 ---
 
+## Analyzed & Confirmed Non-Issues
+
+### CATCH-ALL Double-Processing (Non-Issue)
+**Concern:** CATCH-ALL Missed Email Recovery could re-process emails that were already triaged, potentially applying conflicting labels.
+**Why it's not an issue:** Three layers of protection prevent this:
+1. Gmail search uses `-label:TAG-SYS`, excluding any thread with an existing TAG-SYS label
+2. The AI prompt checks for TAG-SYS labels and returns `skip: true` if any exist
+3. A Safety Filter code node re-checks label data before passing to classification
+
+An email that has been processed by *any* triage workflow (main or CATCH-ALL) gets a TAG-SYS label and is permanently excluded from future CATCH-ALL runs.
+**Reviewed:** 2026-02-08
+
+### Quote Rejected Agent Race Window (Non-Issue)
+**Concern:** Up to 30 minutes can elapse between a quote rejection event and the Quote Rejected agent processing it. During that window, the thread still carries its old Sales B-labels (e.g., QUOTE), so other workflows could theoretically act on it.
+**Why it's not an issue:** The Quote Rejected agent auto-sends a rejection email in a single fire-and-forget step. It does not read or depend on the thread's current label state. No other workflow acts on a thread in the QUOTE state during that window — the Needs Info to Quote Agent only triggers on NEEDS-INFO, and the main triage only processes untagged emails.
+**Reviewed:** 2026-02-08
+
+---
+
 ## Recovery Procedures
 
 ### General Recovery Checklist
