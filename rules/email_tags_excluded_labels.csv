@@ -1,0 +1,4 @@
+Email Tag,What It Applies To,Automations/Actions Triggered,How is tag removed,How it'll help,Note
+COMMS-CONTACTFORM,"Emails that are already classified by ""Contact Us"" Form on site being filled",Link Here,"Once Routed to A. NEEDS-INFO, CS-COMMS or Marked Spam",Automates reply and routing to contact form fills,Already functional and should be excluded from incoming email triggers in Flowchart
+COMMS-POSTFOLLOWUP,"Emails that are already classified via ""Following up on your order from Dads Printing"" subject line rule",Link Here,"Once Routed to A. CS-COMMS, Review Request Sent or remove manually once new order request response sent","Auto sends reviews on positive orders, forwards to CS and notifies on Reorders",Already functional and should be excluded from incoming email triggers in Flowchart
+FORMS,Filled Elementor Forms,,,,
