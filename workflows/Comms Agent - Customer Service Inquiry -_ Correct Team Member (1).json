@@ -595,6 +595,19 @@
     },
     {
       "parameters": {
+        "jsCode": "// Prevent duplicate forwarding for clients with multiple completed orders\n// Only process the first order found\nif ($input.all().length > 0) {\n  return [$input.first()];\n}\nreturn [];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        -96
+      ],
+      "id": "limit-completed-orders-001",
+      "name": "Limit to First Completed Order"
+    },
+    {
+      "parameters": {
         "resource": "boardItem",
         "operation": "getByColumnValue",
         "boardId": "2071545115",
@@ -1947,6 +1960,17 @@
       ]
     },
     "Search Completed": {
+      "main": [
+        [
+          {
+            "node": "Limit to First Completed Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to First Completed Order": {
       "main": [
         [
           {
