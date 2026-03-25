@@ -1,0 +1,1128 @@
+{
+  "updatedAt": "2026-03-21T01:53:53.503Z",
+  "createdAt": "2026-02-22T16:31:22.533Z",
+  "id": "keDWe4d1X31uYgLf",
+  "name": "EMAIL TRIAGE V2 - CONTEXT-ENRICHER",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"sender_email\": null,\n  \"thread_id\": null\n}"
+      },
+      "id": "trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pass-through: forwards sender_email and thread_id from parent workflow\n// When testing manually, set values in Execute Workflow Trigger's jsonExample\nconst input = $input.first().json;\nreturn [{ json: {\n  sender_email: input.sender_email || null,\n  thread_id: input.thread_id || null\n}}];"
+      },
+      "id": "test_fallback",
+      "name": "Test Fallback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.pipedrive.com/v1/persons/search?term={{ $json.sender_email }}&fields=email&api_token=REDACTED_PIPEDRIVE_TOKEN",
+        "options": {}
+      },
+      "id": "pipedrive_search",
+      "name": "Step 1 - Pipedrive Person Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        304
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const triggerData = $('Execute Workflow Trigger').first().json;\nconst senderEmail = triggerData.sender_email;\nconst searchResult = $input.first().json;\nconst API_TOKEN = '86eda7172621e731a5c482c52306d395ba35e193';\n\nif (!searchResult.data?.items?.length) {\n  return [{ json: {\n    fetch_url: 'https://api.pipedrive.com/v1/persons/0/deals?status=open&api_token=' + API_TOKEN,\n    person_id: null, name: null, org_name: null, org_id: null,\n    email: senderEmail, new_contact: true, source: 'none', is_primary: true\n  }}];\n}\n\nconst persons = searchResult.data.items;\nconst items = [];\nconst seenOrgs = new Set();\n\nfor (let i = 0; i < persons.length; i++) {\n  const p = persons[i].item;\n  items.push({ json: {\n    fetch_url: `https://api.pipedrive.com/v1/persons/${p.id}/deals?status=open&api_token=${API_TOKEN}`,\n    person_id: p.id, name: p.name,\n    org_name: p.organization?.name || null,\n    org_id: p.organization?.id || null,\n    email: p.primary_email || senderEmail,\n    new_contact: false, source: 'person', is_primary: i === 0\n  }});\n  if (p.organization?.id && !seenOrgs.has(p.organization.id)) {\n    seenOrgs.add(p.organization.id);\n    items.push({ json: {\n      fetch_url: `https://api.pipedrive.com/v1/organizations/${p.organization.id}/deals?status=open&api_token=${API_TOKEN}`,\n      person_id: p.id, name: p.name,\n      org_name: p.organization.name || null,\n      org_id: p.organization.id,\n      email: p.primary_email || senderEmail,\n      new_contact: false, source: 'org', is_primary: false\n    }});\n  }\n}\n\nreturn items;"
+      },
+      "id": "parse_persons",
+      "name": "Step 1b - Parse Persons",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.fetch_url }}",
+        "options": {}
+      },
+      "id": "fetch_deals",
+      "name": "Step 2 - Fetch Deals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        304
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const serviceMap = {9:'Screenprint',10:'DTG',12:'Sublimation',14:'Embroidery',15:'Promo Products',17:'Knit Socks',18:'Sub Socks',21:'Custom Socks'};\nconst stageMap = {1:'Uncontacted',2:'In Contact',3:'Preparing Quotation',4:'Quote Sent',5:'Won',6:'Lost'};\nconst FIELD_SERVICE = 'ac41974cf4da3eabc2955b5533f80df058c53b2b';\nconst FIELD_QTY = 'eec1f00a2a01851427b5908878ced3888bd5c67a';\nconst FIELD_DEADLINE = '86ac6f8ccf0b48b75082fbea2c56136468184f0c';\nconst FIELD_ITEM = '85bda8a90660cd42d96b3cc497c83a2cacf80b38';\n\nconst allItems = $input.all();\nconst personMeta = $('Step 1b - Parse Persons').all();\n\nlet identity = null;\nlet deals = [];\n\n// Find first item with deals, prefer person-source over org-source\nconst personItems = [];\nconst orgItems = [];\nfor (let i = 0; i < allItems.length; i++) {\n  const meta = personMeta[i]?.json || {};\n  const resp = allItems[i].json;\n  const rawDeals = resp?.data || [];\n  if (meta.source === 'person') personItems.push({ meta, rawDeals });\n  else orgItems.push({ meta, rawDeals });\n}\n\nlet winner = personItems.find(x => x.rawDeals.length > 0) || orgItems.find(x => x.rawDeals.length > 0);\n\nif (winner) {\n  const m = winner.meta;\n  identity = { person_id: m.person_id, name: m.name, org_name: m.org_name, email: m.email, new_contact: false };\n  const sorted = winner.rawDeals.sort((a, b) => new Date(b.update_time) - new Date(a.update_time)).slice(0, 3);\n  deals = sorted.map((d, i) => ({\n    deal_id: d.id, title: d.title,\n    stage: stageMap[d.stage_id] || 'Stage ' + d.stage_id,\n    value: d.value || 0, owner: d.owner_name || null,\n    service_type: serviceMap[d[FIELD_SERVICE]] || d[FIELD_SERVICE] || null,\n    quantity: d[FIELD_QTY] || null, deadline: d[FIELD_DEADLINE] || null,\n    item_of_interest: d[FIELD_ITEM] || null, is_most_recent: i === 0\n  }));\n} else {\n  const primary = personMeta.find(x => x.json.is_primary)?.json || personMeta[0]?.json || {};\n  identity = {\n    person_id: primary.person_id || null, name: primary.name || null,\n    org_name: primary.org_name || null, email: primary.email || null,\n    new_contact: primary.new_contact || false\n  };\n}\n\nreturn [{ json: { identity, deals } }];"
+      },
+      "id": "merge_deals",
+      "name": "Step 2b - Merge Deals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $input.first().json;\nconst deals = prev.deals || [];\n\nif (deals.length === 0) {\n  return [{ json: { ...prev, order: null, _skip_monday: true, request_body: '{}' } }];\n}\n\nconst searchTerm = deals[0]?.title || '';\nif (!searchTerm) {\n  return [{ json: { ...prev, order: null, _skip_monday: true, request_body: '{}' } }];\n}\n\nconst boardIds = [2042671018, 2071545220, 2071545115, 18391899286, 2469909693, 8097949101, 8133495678, 2072296463];\nconst escapedTerm = searchTerm.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"');\n\nconst query = `query { boards(ids: [${boardIds.join(',')}]) { id name items_page(limit: 3, query_params: { rules: [{ column_id: \\\"name\\\", compare_value: [\\\"${escapedTerm}\\\"] }] }) { items { id name column_values { id text } } } } }`;\n\nreturn [{ json: { ...prev, _skip_monday: false, _search_term: searchTerm, request_body: JSON.stringify({ query }) } }];"
+      },
+      "id": "monday_prep",
+      "name": "Step 3a - Build Monday Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.monday.com/v2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjEzNzc1NzE4NiwiYWFpIjoxMSwidWlkIjoyNjYyMjM2OCwiaWFkIjoiMjAyMS0xMi0xOFQyMTowMTozMy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTA2ODMyODgsInJnbiI6InVzZTEifQ.BlAItIZqBhNOmKO0-ygvBFRNZ8L9znC4Q-ClpMlJJc0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "API-Version",
+              "value": "2024-10"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "monday_http",
+      "name": "Step 3b - Monday API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        304
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Step 3a - Build Monday Query').first().json;\nconst mondayResp = $input.first().json;\n\nif (prev._skip_monday) {\n  const { _skip_monday, _search_term, request_body, ...rest } = prev;\n  return [{ json: { ...rest, order: null } }];\n}\n\nconst boardMeta = {\n  '2042671018': { name: 'Pre-Production', statusCols: { status: 'Awaiting Blanks', dup__of_status: 'Awaiting Printart', dup__of_awaiting_printart: 'Awaiting Vendor Confirmation', dup__of_awaiting_vendor_confirmation: 'Polishing/Proof' } },\n  '2071545220': { name: 'Local Production', statusCols: { status: 'Production Confirmed', dup__of_status: 'Completed' }, extraCols: { date_mks346vz: 'eta', dropdown_31: 'vendor', text82: 'order_po', date_mktt9dfh: 'vendor_due_date', Dropdown: 'service_type' } },\n  '2071545115': { name: 'Overseas Production', statusCols: { status: 'Production Confirmed', dup__of_status: 'Completed' } },\n  '18391899286': { name: 'Inhouse Embroidery', statusCols: { status7: 'Blanks Picked', status: 'Embroidery Status', dup__of_awaiting_printart: 'Packed' } },\n  '2469909693': { name: 'Transfer Board', statusCols: { status7: 'Blanks Picked', status: 'Transfers Printed/Picked', dup__of_status: 'Pressed', dup__of_awaiting_printart: 'Packed' } },\n  '8097949101': { name: 'Shipping', statusCols: { status4: 'Specs Confirmed', status_mkke5yfg: 'Label Booked', status_1: 'Bills Paid', status_2: 'Fulfilled' } },\n  '8133495678': { name: 'Blindshipping', statusCols: { status4: 'Specs Confirmed', status_mkke5yfg: 'Label Booked', status_1: 'Bills Paid', status_2: 'Fulfilled' } },\n  '2072296463': { name: 'Pickup', statusCols: { status4: 'Time/Address Confirmed', status_1: 'Bills Paid', status_2: 'Fulfilled' } }\n};\n\nlet order = null;\ntry {\n  const boards = mondayResp?.data?.boards || [];\n  for (const board of boards) {\n    const items = board.items_page?.items || [];\n    if (items.length === 0) continue;\n    const item = items[0];\n    const meta = boardMeta[String(board.id)] || { name: board.name, statusCols: {} };\n    const colMap = {};\n    for (const cv of item.column_values) colMap[cv.id] = cv.text || '';\n    const statuses = {};\n    for (const [colId, label] of Object.entries(meta.statusCols)) {\n      if (colMap[colId]) statuses[label] = colMap[colId];\n    }\n    let eta = null, vendor = null, vendorDue = null, svcType = null;\n    if (meta.extraCols) {\n      for (const [colId, field] of Object.entries(meta.extraCols)) {\n        if (field === 'eta') eta = colMap[colId] || null;\n        if (field === 'vendor') vendor = colMap[colId] || null;\n        if (field === 'vendor_due_date') vendorDue = colMap[colId] || null;\n        if (field === 'service_type') svcType = colMap[colId] || null;\n      }\n    }\n    const statusParts = Object.entries(statuses).filter(([_,v]) => v).map(([k,v]) => k+': '+v);\n    let human = 'In '+meta.name.toLowerCase();\n    if (statusParts.length > 0) human += ' \u2014 '+statusParts.join(', ');\n    if (eta) human += ', ETA: '+eta;\n    order = { found_on_board: meta.name, board_id: String(board.id), item_name: item.name, monday_item_id: item.id, statuses, eta, vendor, vendor_due_date: vendorDue, service_type: svcType, human_readable: human };\n    break;\n  }\n} catch(e) {}\n\nconst { _skip_monday, _search_term, request_body, ...rest } = prev;\nreturn [{ json: { ...rest, order } }];"
+      },
+      "id": "monday_parse",
+      "name": "Step 3c - Parse Monday",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://quickbooks.api.intuit.com/v3/company/123146220125079/query?query=SELECT * FROM Invoice WHERE CustomerRef IN (SELECT Id FROM Customer WHERE DisplayName LIKE '%{{ $json.identity ? $json.identity.name : 'SKIP_NO_NAME' }}%') AND Balance > '0'&minorversion=65",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "quickBooksOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "qb_lookup",
+      "name": "Step 4 - QuickBooks Invoice Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1808,
+        304
+      ],
+      "credentials": {
+        "quickBooksOAuth2Api": {
+          "id": "uiqR2DiPNhYWXdSj",
+          "name": "QuickBooks Online"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const upstreamData = $('Step 3c - Parse Monday').first().json;\nlet financials = { outstanding_balance: 0, last_payment_date: null, open_invoices: [] };\ntry {\n  const qbResult = $input.first().json;\n  if (qbResult.error || !qbResult.QueryResponse) return [{ json: { ...upstreamData, financials } }];\n  const invoices = qbResult.QueryResponse?.Invoice || [];\n  let totalBalance = 0;\n  const openInvs = [];\n  for (const inv of invoices) {\n    const balance = parseFloat(inv.Balance) || 0;\n    if (balance > 0) { totalBalance += balance; openInvs.push({ doc_number: inv.DocNumber || null, amount: balance, due_date: inv.DueDate || null }); }\n  }\n  financials = { outstanding_balance: Math.round(totalBalance * 100) / 100, last_payment_date: null, open_invoices: openInvs };\n} catch (err) {}\nreturn [{ json: { ...upstreamData, financials } }];"
+      },
+      "id": "parse_financials",
+      "name": "Step 4b - Parse Financials",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/threads/{{ $('Test Fallback').first().json.thread_id }}?format=full",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {}
+      },
+      "id": "gmail_thread",
+      "name": "Step 5a - Gmail Get Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2208,
+        304
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@dadsprinting.com"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Step 4b - Parse Financials').first().json;\nconst gmailResult = $input.first().json;\n\nlet thread = { summary: null, message_count: 0, last_message_from: null };\nlet request_body = '';\nlet _skip_anthropic = true;\n\ntry {\n  if (gmailResult.error || !gmailResult.messages) {\n    return [{ json: { ...prev, thread, request_body, _skip_anthropic } }];\n  }\n  const messages = gmailResult.messages || [];\n  thread.message_count = messages.length;\n  if (messages.length > 0) {\n    const lastMsg = messages[messages.length - 1];\n    const fromHeader = (lastMsg.payload?.headers || []).find(h => h.name.toLowerCase() === 'from');\n    thread.last_message_from = fromHeader?.value || null;\n  }\n  const findPart = (parts, mime) => {\n    for (const part of parts) {\n      if (part.mimeType === mime && part.body?.data) return Buffer.from(part.body.data, 'base64url').toString('utf-8');\n      if (part.parts) { const found = findPart(part.parts, mime); if (found) return found; }\n    }\n    return null;\n  };\n  const stripHtml = (html) => html.replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi,'').replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi,'').replace(/<br\\s*\\/?>/gi,'\\n').replace(/<\\/?(p|div|tr|li|h[1-6])[^>]*>/gi,'\\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,\"'\").replace(/&quot;/g,'\"').replace(/\\n{3,}/g,'\\n\\n').trim();\n  const recentMsgs = messages.slice(-5);\n  const cleanedParts = [];\n  for (const msg of recentMsgs) {\n    const from = (msg.payload?.headers || []).find(h => h.name.toLowerCase() === 'from')?.value || 'Unknown';\n    const date = (msg.payload?.headers || []).find(h => h.name.toLowerCase() === 'date')?.value || '';\n    const parts = msg.payload?.parts || [];\n    let body = findPart(parts, 'text/plain');\n    if (!body) { const html = findPart(parts, 'text/html'); if (html) body = stripHtml(html); }\n    if (!body && msg.payload?.body?.data) {\n      const raw = Buffer.from(msg.payload.body.data, 'base64url').toString('utf-8');\n      body = raw.includes('<') ? stripHtml(raw) : raw;\n    }\n    if (!body) continue;\n    body = body.split('\\n').filter(line => !line.trim().startsWith('>')).join('\\n');\n    body = body.replace(/On .+wrote:\\s*/gi, '');\n    const sigPatterns = [/^--\\s*$/m, /^_{3,}/m, /^Sent from my /m, /^Get Outlook for/m];\n    for (const p of sigPatterns) { const m = body.search(p); if (m > 0) body = body.substring(0, m); }\n    body = body.replace(/\\n{3,}/g, '\\n\\n').trim();\n    if (body.length > 0) cleanedParts.push('--- ' + from + ' (' + date + ') ---\\n' + body);\n  }\n  const cleanedThread = cleanedParts.join('\\n\\n').substring(0, 3000);\n  if (cleanedThread) {\n    _skip_anthropic = false;\n    const prompt = 'Summarize this email thread in 2-3 sentences for a customer service rep at a custom apparel printing company. Focus on: what the customer wants, any pending questions, and the current state of the conversation. Be specific.\\n\\nThread:\\n' + cleanedThread;\n    request_body = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 200, messages: [{ role: 'user', content: prompt }] });\n  }\n} catch (err) {}\n\nreturn [{ json: { ...prev, thread, request_body, _skip_anthropic } }];"
+      },
+      "id": "clean_thread",
+      "name": "Step 5b - Clean Thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "REDACTED_ANTHROPIC_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "anthropic_http",
+      "name": "Step 5c - Anthropic Summarize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2608,
+        304
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Step 5b - Clean Thread').first().json;\nconst anthropicResp = $input.first().json;\n\nlet thread = prev.thread || { summary: null, message_count: 0, last_message_from: null };\n\ntry {\n  if (!prev._skip_anthropic && anthropicResp?.content?.[0]?.text) {\n    thread.summary = anthropicResp.content[0].text;\n  }\n} catch(e) {}\n\nconst { request_body, _skip_anthropic, ...rest } = prev;\nreturn [{ json: { ...rest, thread } }];"
+      },
+      "id": "parse_summary",
+      "name": "Step 5d - Parse Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const enriched = $input.first().json;\nconst output = {\n  identity: enriched.identity || { person_id: null, name: null, org_name: null, email: null, new_contact: true },\n  deals: enriched.deals || [],\n  deal_context: enriched.deal_context || null,\n  order: enriched.order || null,\n  financials: enriched.financials || { outstanding_balance: 0, last_payment_date: null, open_invoices: [] },\n  thread: enriched.thread || { summary: null, message_count: 0, last_message_from: null },\n  _meta: {\n    enriched_at: DateTime.now().toISO(),\n    has_pipedrive: !!enriched.identity?.person_id,\n    has_deal_context: !!enriched.deal_context,\n    has_order: !!enriched.order,\n    has_financials: enriched.financials?.open_invoices?.length > 0,\n    has_summary: !!enriched.thread?.summary\n  }\n};\nreturn [{ json: output }];"
+      },
+      "id": "assemble_output",
+      "name": "Assemble Final Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        304
+      ]
+    },
+    {
+      "id": "fetch_deal_notes",
+      "name": "Step 2c - Fetch Deal Notes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        500
+      ],
+      "parameters": {
+        "url": "=https://api.pipedrive.com/v1/deals/{{ ($json.deals && $json.deals[0]) ? $json.deals[0].deal_id : 0 }}/notes?sort=update_time DESC&start=0&limit=10&api_token=REDACTED_PIPEDRIVE_TOKEN",
+        "options": {}
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "extract_pinned_note",
+      "name": "Step 2d - Extract Pinned Note",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        700
+      ],
+      "parameters": {
+        "jsCode": "const prev = $('Step 2b - Merge Deals').first().json;\nconst notesResp = $input.first().json;\n\nlet deal_context = null;\n\ntry {\n  const notes = notesResp?.data || [];\n  \n  if (notes.length > 0 && prev.deals && prev.deals.length > 0) {\n    // First priority: find a pinned note (DEALCONTEXT output)\n    const pinned = notes.find(n => n.pinned_to_deal_flag === 1 || n.pinned_to_deal_flag === true);\n    \n    if (pinned) {\n      // Strip HTML tags from the note content\n      let content = (pinned.content || '')\n        .replace(/<br\\s*\\/?>/gi, '\\n')\n        .replace(/<\\/?(p|div|li|ul|ol|h[1-6])[^>]*>/gi, '\\n')\n        .replace(/<[^>]+>/g, '')\n        .replace(/&nbsp;/g, ' ')\n        .replace(/&amp;/g, '&')\n        .replace(/&lt;/g, '<')\n        .replace(/&gt;/g, '>')\n        .replace(/&#39;/g, \"'\")\n        .replace(/&quot;/g, '\"')\n        .replace(/\\n{3,}/g, '\\n\\n')\n        .trim();\n      \n      // Cap at 3000 chars to stay within token limits\n      if (content.length > 3000) content = content.substring(0, 3000) + '\\n[...truncated]';\n      \n      deal_context = {\n        source: 'pinned_note',\n        deal_id: prev.deals[0].deal_id,\n        deal_title: prev.deals[0].title || '',\n        note_id: pinned.id,\n        updated_at: pinned.update_time || pinned.add_time || null,\n        content: content\n      };\n    } else {\n      // Fallback: grab the most recent note (could be a call transcript or manual note)\n      const latest = notes[0];\n      let content = (latest.content || '')\n        .replace(/<br\\s*\\/?>/gi, '\\n')\n        .replace(/<\\/?(p|div|li|ul|ol|h[1-6])[^>]*>/gi, '\\n')\n        .replace(/<[^>]+>/g, '')\n        .replace(/&nbsp;/g, ' ')\n        .replace(/&amp;/g, '&')\n        .replace(/&lt;/g, '<')\n        .replace(/&gt;/g, '>')\n        .replace(/&#39;/g, \"'\")\n        .replace(/&quot;/g, '\"')\n        .replace(/\\n{3,}/g, '\\n\\n')\n        .trim();\n      \n      if (content.length > 2000) content = content.substring(0, 2000) + '\\n[...truncated]';\n      \n      deal_context = {\n        source: 'latest_note',\n        deal_id: prev.deals[0].deal_id,\n        deal_title: prev.deals[0].title || '',\n        note_id: latest.id,\n        updated_at: latest.update_time || latest.add_time || null,\n        content: content\n      };\n    }\n  }\n} catch(e) {\n  // Graceful degradation \u2014 enricher continues without deal context\n}\n\nreturn [{ json: { ...prev, deal_context } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Test Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Fallback": {
+      "main": [
+        [
+          {
+            "node": "Step 1 - Pipedrive Person Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 1 - Pipedrive Person Search": {
+      "main": [
+        [
+          {
+            "node": "Step 1b - Parse Persons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 1b - Parse Persons": {
+      "main": [
+        [
+          {
+            "node": "Step 2 - Fetch Deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 2 - Fetch Deals": {
+      "main": [
+        [
+          {
+            "node": "Step 2b - Merge Deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 3a - Build Monday Query": {
+      "main": [
+        [
+          {
+            "node": "Step 3b - Monday API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 3b - Monday API": {
+      "main": [
+        [
+          {
+            "node": "Step 3c - Parse Monday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 3c - Parse Monday": {
+      "main": [
+        [
+          {
+            "node": "Step 4 - QuickBooks Invoice Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 4 - QuickBooks Invoice Lookup": {
+      "main": [
+        [
+          {
+            "node": "Step 4b - Parse Financials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 4b - Parse Financials": {
+      "main": [
+        [
+          {
+            "node": "Step 5a - Gmail Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 5a - Gmail Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Step 5b - Clean Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 5b - Clean Thread": {
+      "main": [
+        [
+          {
+            "node": "Step 5c - Anthropic Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 5c - Anthropic Summarize": {
+      "main": [
+        [
+          {
+            "node": "Step 5d - Parse Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 5d - Parse Summary": {
+      "main": [
+        [
+          {
+            "node": "Assemble Final Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 2b - Merge Deals": {
+      "main": [
+        [
+          {
+            "node": "Step 2c - Fetch Deal Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 2c - Fetch Deal Notes": {
+      "main": [
+        [
+          {
+            "node": "Step 2d - Extract Pinned Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 2d - Extract Pinned Note": {
+      "main": [
+        [
+          {
+            "node": "Step 3a - Build Monday Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "ukDM1XOQXX42l98o"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c99b4f70-68ac-4fca-b784-1c61cc36679d",
+  "activeVersionId": "c99b4f70-68ac-4fca-b784-1c61cc36679d",
+  "versionCounter": 69,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-02-22T16:31:22.590Z",
+      "createdAt": "2026-02-22T16:31:22.590Z",
+      "role": "workflow:owner",
+      "workflowId": "keDWe4d1X31uYgLf",
+      "projectId": "p5kbw6tmB2iGubmW",
+      "project": {
+        "updatedAt": "2025-09-10T00:26:05.189Z",
+        "createdAt": "2025-09-10T00:20:54.728Z",
+        "id": "p5kbw6tmB2iGubmW",
+        "name": "Adam Lando <info@dadsprinting.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8b08385f-879c-46dc-9695-c5472ba48f1a",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-09-10T00:20:54.728Z",
+            "createdAt": "2025-09-10T00:20:54.728Z",
+            "userId": "8b08385f-879c-46dc-9695-c5472ba48f1a",
+            "projectId": "p5kbw6tmB2iGubmW",
+            "user": {
+              "updatedAt": "2026-03-25T07:00:05.000Z",
+              "createdAt": "2025-09-10T00:20:54.119Z",
+              "id": "8b08385f-879c-46dc-9695-c5472ba48f1a",
+              "email": "info@dadsprinting.com",
+              "firstName": "Adam",
+              "lastName": "Lando",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-09-10T00:26:24.324Z",
+                "personalization_survey_n8n_version": "1.110.1",
+                "companySize": "20-99",
+                "companyType": "ecommerce",
+                "role": "business-owner",
+                "reportedSource": "friend"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "3oJeKPMz0P5NefA0",
+                "userActivatedAt": 1758218473757,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1761593075513
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-03-24",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2025-11-16T00:26:22.434Z",
+      "createdAt": "2025-11-16T00:26:22.434Z",
+      "id": "dJGSllKQRCQuCvjQ",
+      "name": "VA / for info@"
+    },
+    {
+      "updatedAt": "2025-12-08T00:46:38.055Z",
+      "createdAt": "2025-12-08T00:46:38.055Z",
+      "id": "omlUrfq9lKY1K9wm",
+      "name": "Sales"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-03-21T01:53:53.507Z",
+    "createdAt": "2026-03-21T01:53:53.507Z",
+    "versionId": "c99b4f70-68ac-4fca-b784-1c61cc36679d",
+    "workflowId": "keDWe4d1X31uYgLf",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "jsonExample",
+          "jsonExample": "{\n  \"sender_email\": null,\n  \"thread_id\": null\n}"
+        },
+        "id": "trigger",
+        "name": "Execute Workflow Trigger",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Pass-through: forwards sender_email and thread_id from parent workflow\n// When testing manually, set values in Execute Workflow Trigger's jsonExample\nconst input = $input.first().json;\nreturn [{ json: {\n  sender_email: input.sender_email || null,\n  thread_id: input.thread_id || null\n}}];"
+        },
+        "id": "test_fallback",
+        "name": "Test Fallback",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          208,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.pipedrive.com/v1/persons/search?term={{ $json.sender_email }}&fields=email&api_token=REDACTED_PIPEDRIVE_TOKEN",
+          "options": {}
+        },
+        "id": "pipedrive_search",
+        "name": "Step 1 - Pipedrive Person Search",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          400,
+          304
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const triggerData = $('Execute Workflow Trigger').first().json;\nconst senderEmail = triggerData.sender_email;\nconst searchResult = $input.first().json;\nconst API_TOKEN = '86eda7172621e731a5c482c52306d395ba35e193';\n\nif (!searchResult.data?.items?.length) {\n  return [{ json: {\n    fetch_url: 'https://api.pipedrive.com/v1/persons/0/deals?status=open&api_token=' + API_TOKEN,\n    person_id: null, name: null, org_name: null, org_id: null,\n    email: senderEmail, new_contact: true, source: 'none', is_primary: true\n  }}];\n}\n\nconst persons = searchResult.data.items;\nconst items = [];\nconst seenOrgs = new Set();\n\nfor (let i = 0; i < persons.length; i++) {\n  const p = persons[i].item;\n  items.push({ json: {\n    fetch_url: `https://api.pipedrive.com/v1/persons/${p.id}/deals?status=open&api_token=${API_TOKEN}`,\n    person_id: p.id, name: p.name,\n    org_name: p.organization?.name || null,\n    org_id: p.organization?.id || null,\n    email: p.primary_email || senderEmail,\n    new_contact: false, source: 'person', is_primary: i === 0\n  }});\n  if (p.organization?.id && !seenOrgs.has(p.organization.id)) {\n    seenOrgs.add(p.organization.id);\n    items.push({ json: {\n      fetch_url: `https://api.pipedrive.com/v1/organizations/${p.organization.id}/deals?status=open&api_token=${API_TOKEN}`,\n      person_id: p.id, name: p.name,\n      org_name: p.organization.name || null,\n      org_id: p.organization.id,\n      email: p.primary_email || senderEmail,\n      new_contact: false, source: 'org', is_primary: false\n    }});\n  }\n}\n\nreturn items;"
+        },
+        "id": "parse_persons",
+        "name": "Step 1b - Parse Persons",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          608,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "url": "={{ $json.fetch_url }}",
+          "options": {}
+        },
+        "id": "fetch_deals",
+        "name": "Step 2 - Fetch Deals",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          800,
+          304
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const serviceMap = {9:'Screenprint',10:'DTG',12:'Sublimation',14:'Embroidery',15:'Promo Products',17:'Knit Socks',18:'Sub Socks',21:'Custom Socks'};\nconst stageMap = {1:'Uncontacted',2:'In Contact',3:'Preparing Quotation',4:'Quote Sent',5:'Won',6:'Lost'};\nconst FIELD_SERVICE = 'ac41974cf4da3eabc2955b5533f80df058c53b2b';\nconst FIELD_QTY = 'eec1f00a2a01851427b5908878ced3888bd5c67a';\nconst FIELD_DEADLINE = '86ac6f8ccf0b48b75082fbea2c56136468184f0c';\nconst FIELD_ITEM = '85bda8a90660cd42d96b3cc497c83a2cacf80b38';\n\nconst allItems = $input.all();\nconst personMeta = $('Step 1b - Parse Persons').all();\n\nlet identity = null;\nlet deals = [];\n\n// Find first item with deals, prefer person-source over org-source\nconst personItems = [];\nconst orgItems = [];\nfor (let i = 0; i < allItems.length; i++) {\n  const meta = personMeta[i]?.json || {};\n  const resp = allItems[i].json;\n  const rawDeals = resp?.data || [];\n  if (meta.source === 'person') personItems.push({ meta, rawDeals });\n  else orgItems.push({ meta, rawDeals });\n}\n\nlet winner = personItems.find(x => x.rawDeals.length > 0) || orgItems.find(x => x.rawDeals.length > 0);\n\nif (winner) {\n  const m = winner.meta;\n  identity = { person_id: m.person_id, name: m.name, org_name: m.org_name, email: m.email, new_contact: false };\n  const sorted = winner.rawDeals.sort((a, b) => new Date(b.update_time) - new Date(a.update_time)).slice(0, 3);\n  deals = sorted.map((d, i) => ({\n    deal_id: d.id, title: d.title,\n    stage: stageMap[d.stage_id] || 'Stage ' + d.stage_id,\n    value: d.value || 0, owner: d.owner_name || null,\n    service_type: serviceMap[d[FIELD_SERVICE]] || d[FIELD_SERVICE] || null,\n    quantity: d[FIELD_QTY] || null, deadline: d[FIELD_DEADLINE] || null,\n    item_of_interest: d[FIELD_ITEM] || null, is_most_recent: i === 0\n  }));\n} else {\n  const primary = personMeta.find(x => x.json.is_primary)?.json || personMeta[0]?.json || {};\n  identity = {\n    person_id: primary.person_id || null, name: primary.name || null,\n    org_name: primary.org_name || null, email: primary.email || null,\n    new_contact: primary.new_contact || false\n  };\n}\n\nreturn [{ json: { identity, deals } }];"
+        },
+        "id": "merge_deals",
+        "name": "Step 2b - Merge Deals",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1008,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const prev = $input.first().json;\nconst deals = prev.deals || [];\n\nif (deals.length === 0) {\n  return [{ json: { ...prev, order: null, _skip_monday: true, request_body: '{}' } }];\n}\n\nconst searchTerm = deals[0]?.title || '';\nif (!searchTerm) {\n  return [{ json: { ...prev, order: null, _skip_monday: true, request_body: '{}' } }];\n}\n\nconst boardIds = [2042671018, 2071545220, 2071545115, 18391899286, 2469909693, 8097949101, 8133495678, 2072296463];\nconst escapedTerm = searchTerm.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"');\n\nconst query = `query { boards(ids: [${boardIds.join(',')}]) { id name items_page(limit: 3, query_params: { rules: [{ column_id: \\\"name\\\", compare_value: [\\\"${escapedTerm}\\\"] }] }) { items { id name column_values { id text } } } } }`;\n\nreturn [{ json: { ...prev, _skip_monday: false, _search_term: searchTerm, request_body: JSON.stringify({ query }) } }];"
+        },
+        "id": "monday_prep",
+        "name": "Step 3a - Build Monday Query",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1200,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.monday.com/v2",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjEzNzc1NzE4NiwiYWFpIjoxMSwidWlkIjoyNjYyMjM2OCwiaWFkIjoiMjAyMS0xMi0xOFQyMTowMTozMy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTA2ODMyODgsInJnbiI6InVzZTEifQ.BlAItIZqBhNOmKO0-ygvBFRNZ8L9znC4Q-ClpMlJJc0"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "API-Version",
+                "value": "2024-10"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "body": "={{ $json.request_body }}",
+          "options": {}
+        },
+        "id": "monday_http",
+        "name": "Step 3b - Monday API",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1408,
+          304
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const prev = $('Step 3a - Build Monday Query').first().json;\nconst mondayResp = $input.first().json;\n\nif (prev._skip_monday) {\n  const { _skip_monday, _search_term, request_body, ...rest } = prev;\n  return [{ json: { ...rest, order: null } }];\n}\n\nconst boardMeta = {\n  '2042671018': { name: 'Pre-Production', statusCols: { status: 'Awaiting Blanks', dup__of_status: 'Awaiting Printart', dup__of_awaiting_printart: 'Awaiting Vendor Confirmation', dup__of_awaiting_vendor_confirmation: 'Polishing/Proof' } },\n  '2071545220': { name: 'Local Production', statusCols: { status: 'Production Confirmed', dup__of_status: 'Completed' }, extraCols: { date_mks346vz: 'eta', dropdown_31: 'vendor', text82: 'order_po', date_mktt9dfh: 'vendor_due_date', Dropdown: 'service_type' } },\n  '2071545115': { name: 'Overseas Production', statusCols: { status: 'Production Confirmed', dup__of_status: 'Completed' } },\n  '18391899286': { name: 'Inhouse Embroidery', statusCols: { status7: 'Blanks Picked', status: 'Embroidery Status', dup__of_awaiting_printart: 'Packed' } },\n  '2469909693': { name: 'Transfer Board', statusCols: { status7: 'Blanks Picked', status: 'Transfers Printed/Picked', dup__of_status: 'Pressed', dup__of_awaiting_printart: 'Packed' } },\n  '8097949101': { name: 'Shipping', statusCols: { status4: 'Specs Confirmed', status_mkke5yfg: 'Label Booked', status_1: 'Bills Paid', status_2: 'Fulfilled' } },\n  '8133495678': { name: 'Blindshipping', statusCols: { status4: 'Specs Confirmed', status_mkke5yfg: 'Label Booked', status_1: 'Bills Paid', status_2: 'Fulfilled' } },\n  '2072296463': { name: 'Pickup', statusCols: { status4: 'Time/Address Confirmed', status_1: 'Bills Paid', status_2: 'Fulfilled' } }\n};\n\nlet order = null;\ntry {\n  const boards = mondayResp?.data?.boards || [];\n  for (const board of boards) {\n    const items = board.items_page?.items || [];\n    if (items.length === 0) continue;\n    const item = items[0];\n    const meta = boardMeta[String(board.id)] || { name: board.name, statusCols: {} };\n    const colMap = {};\n    for (const cv of item.column_values) colMap[cv.id] = cv.text || '';\n    const statuses = {};\n    for (const [colId, label] of Object.entries(meta.statusCols)) {\n      if (colMap[colId]) statuses[label] = colMap[colId];\n    }\n    let eta = null, vendor = null, vendorDue = null, svcType = null;\n    if (meta.extraCols) {\n      for (const [colId, field] of Object.entries(meta.extraCols)) {\n        if (field === 'eta') eta = colMap[colId] || null;\n        if (field === 'vendor') vendor = colMap[colId] || null;\n        if (field === 'vendor_due_date') vendorDue = colMap[colId] || null;\n        if (field === 'service_type') svcType = colMap[colId] || null;\n      }\n    }\n    const statusParts = Object.entries(statuses).filter(([_,v]) => v).map(([k,v]) => k+': '+v);\n    let human = 'In '+meta.name.toLowerCase();\n    if (statusParts.length > 0) human += ' \u2014 '+statusParts.join(', ');\n    if (eta) human += ', ETA: '+eta;\n    order = { found_on_board: meta.name, board_id: String(board.id), item_name: item.name, monday_item_id: item.id, statuses, eta, vendor, vendor_due_date: vendorDue, service_type: svcType, human_readable: human };\n    break;\n  }\n} catch(e) {}\n\nconst { _skip_monday, _search_term, request_body, ...rest } = prev;\nreturn [{ json: { ...rest, order } }];"
+        },
+        "id": "monday_parse",
+        "name": "Step 3c - Parse Monday",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1600,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://quickbooks.api.intuit.com/v3/company/123146220125079/query?query=SELECT * FROM Invoice WHERE CustomerRef IN (SELECT Id FROM Customer WHERE DisplayName LIKE '%{{ $json.identity ? $json.identity.name : 'SKIP_NO_NAME' }}%') AND Balance > '0'&minorversion=65",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "quickBooksOAuth2Api",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "qb_lookup",
+        "name": "Step 4 - QuickBooks Invoice Lookup",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1808,
+          304
+        ],
+        "credentials": {
+          "quickBooksOAuth2Api": {
+            "id": "uiqR2DiPNhYWXdSj",
+            "name": "QuickBooks Online"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const upstreamData = $('Step 3c - Parse Monday').first().json;\nlet financials = { outstanding_balance: 0, last_payment_date: null, open_invoices: [] };\ntry {\n  const qbResult = $input.first().json;\n  if (qbResult.error || !qbResult.QueryResponse) return [{ json: { ...upstreamData, financials } }];\n  const invoices = qbResult.QueryResponse?.Invoice || [];\n  let totalBalance = 0;\n  const openInvs = [];\n  for (const inv of invoices) {\n    const balance = parseFloat(inv.Balance) || 0;\n    if (balance > 0) { totalBalance += balance; openInvs.push({ doc_number: inv.DocNumber || null, amount: balance, due_date: inv.DueDate || null }); }\n  }\n  financials = { outstanding_balance: Math.round(totalBalance * 100) / 100, last_payment_date: null, open_invoices: openInvs };\n} catch (err) {}\nreturn [{ json: { ...upstreamData, financials } }];"
+        },
+        "id": "parse_financials",
+        "name": "Step 4b - Parse Financials",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2000,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://gmail.googleapis.com/gmail/v1/users/me/threads/{{ $('Test Fallback').first().json.thread_id }}?format=full",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "gmailOAuth2",
+          "options": {}
+        },
+        "id": "gmail_thread",
+        "name": "Step 5a - Gmail Get Thread",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2208,
+          304
+        ],
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "eeR9kYWgMFeo9vvK",
+            "name": "Gmail - info@dadsprinting.com"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const prev = $('Step 4b - Parse Financials').first().json;\nconst gmailResult = $input.first().json;\n\nlet thread = { summary: null, message_count: 0, last_message_from: null };\nlet request_body = '';\nlet _skip_anthropic = true;\n\ntry {\n  if (gmailResult.error || !gmailResult.messages) {\n    return [{ json: { ...prev, thread, request_body, _skip_anthropic } }];\n  }\n  const messages = gmailResult.messages || [];\n  thread.message_count = messages.length;\n  if (messages.length > 0) {\n    const lastMsg = messages[messages.length - 1];\n    const fromHeader = (lastMsg.payload?.headers || []).find(h => h.name.toLowerCase() === 'from');\n    thread.last_message_from = fromHeader?.value || null;\n  }\n  const findPart = (parts, mime) => {\n    for (const part of parts) {\n      if (part.mimeType === mime && part.body?.data) return Buffer.from(part.body.data, 'base64url').toString('utf-8');\n      if (part.parts) { const found = findPart(part.parts, mime); if (found) return found; }\n    }\n    return null;\n  };\n  const stripHtml = (html) => html.replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi,'').replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi,'').replace(/<br\\s*\\/?>/gi,'\\n').replace(/<\\/?(p|div|tr|li|h[1-6])[^>]*>/gi,'\\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,\"'\").replace(/&quot;/g,'\"').replace(/\\n{3,}/g,'\\n\\n').trim();\n  const recentMsgs = messages.slice(-5);\n  const cleanedParts = [];\n  for (const msg of recentMsgs) {\n    const from = (msg.payload?.headers || []).find(h => h.name.toLowerCase() === 'from')?.value || 'Unknown';\n    const date = (msg.payload?.headers || []).find(h => h.name.toLowerCase() === 'date')?.value || '';\n    const parts = msg.payload?.parts || [];\n    let body = findPart(parts, 'text/plain');\n    if (!body) { const html = findPart(parts, 'text/html'); if (html) body = stripHtml(html); }\n    if (!body && msg.payload?.body?.data) {\n      const raw = Buffer.from(msg.payload.body.data, 'base64url').toString('utf-8');\n      body = raw.includes('<') ? stripHtml(raw) : raw;\n    }\n    if (!body) continue;\n    body = body.split('\\n').filter(line => !line.trim().startsWith('>')).join('\\n');\n    body = body.replace(/On .+wrote:\\s*/gi, '');\n    const sigPatterns = [/^--\\s*$/m, /^_{3,}/m, /^Sent from my /m, /^Get Outlook for/m];\n    for (const p of sigPatterns) { const m = body.search(p); if (m > 0) body = body.substring(0, m); }\n    body = body.replace(/\\n{3,}/g, '\\n\\n').trim();\n    if (body.length > 0) cleanedParts.push('--- ' + from + ' (' + date + ') ---\\n' + body);\n  }\n  const cleanedThread = cleanedParts.join('\\n\\n').substring(0, 3000);\n  if (cleanedThread) {\n    _skip_anthropic = false;\n    const prompt = 'Summarize this email thread in 2-3 sentences for a customer service rep at a custom apparel printing company. Focus on: what the customer wants, any pending questions, and the current state of the conversation. Be specific.\\n\\nThread:\\n' + cleanedThread;\n    request_body = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 200, messages: [{ role: 'user', content: prompt }] });\n  }\n} catch (err) {}\n\nreturn [{ json: { ...prev, thread, request_body, _skip_anthropic } }];"
+        },
+        "id": "clean_thread",
+        "name": "Step 5b - Clean Thread",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2400,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "REDACTED_ANTHROPIC_KEY"
+              },
+              {
+                "name": "anthropic-version",
+                "value": "2023-06-01"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "body": "={{ $json.request_body }}",
+          "options": {}
+        },
+        "id": "anthropic_http",
+        "name": "Step 5c - Anthropic Summarize",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2608,
+          304
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const prev = $('Step 5b - Clean Thread').first().json;\nconst anthropicResp = $input.first().json;\n\nlet thread = prev.thread || { summary: null, message_count: 0, last_message_from: null };\n\ntry {\n  if (!prev._skip_anthropic && anthropicResp?.content?.[0]?.text) {\n    thread.summary = anthropicResp.content[0].text;\n  }\n} catch(e) {}\n\nconst { request_body, _skip_anthropic, ...rest } = prev;\nreturn [{ json: { ...rest, thread } }];"
+        },
+        "id": "parse_summary",
+        "name": "Step 5d - Parse Summary",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2800,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const enriched = $input.first().json;\nconst output = {\n  identity: enriched.identity || { person_id: null, name: null, org_name: null, email: null, new_contact: true },\n  deals: enriched.deals || [],\n  deal_context: enriched.deal_context || null,\n  order: enriched.order || null,\n  financials: enriched.financials || { outstanding_balance: 0, last_payment_date: null, open_invoices: [] },\n  thread: enriched.thread || { summary: null, message_count: 0, last_message_from: null },\n  _meta: {\n    enriched_at: DateTime.now().toISO(),\n    has_pipedrive: !!enriched.identity?.person_id,\n    has_deal_context: !!enriched.deal_context,\n    has_order: !!enriched.order,\n    has_financials: enriched.financials?.open_invoices?.length > 0,\n    has_summary: !!enriched.thread?.summary\n  }\n};\nreturn [{ json: output }];"
+        },
+        "id": "assemble_output",
+        "name": "Assemble Final Output",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3008,
+          304
+        ]
+      },
+      {
+        "id": "fetch_deal_notes",
+        "name": "Step 2c - Fetch Deal Notes",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1100,
+          500
+        ],
+        "parameters": {
+          "url": "=https://api.pipedrive.com/v1/deals/{{ ($json.deals && $json.deals[0]) ? $json.deals[0].deal_id : 0 }}/notes?sort=update_time DESC&start=0&limit=10&api_token=REDACTED_PIPEDRIVE_TOKEN",
+          "options": {}
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "extract_pinned_note",
+        "name": "Step 2d - Extract Pinned Note",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1100,
+          700
+        ],
+        "parameters": {
+          "jsCode": "const prev = $('Step 2b - Merge Deals').first().json;\nconst notesResp = $input.first().json;\n\nlet deal_context = null;\n\ntry {\n  const notes = notesResp?.data || [];\n  \n  if (notes.length > 0 && prev.deals && prev.deals.length > 0) {\n    // First priority: find a pinned note (DEALCONTEXT output)\n    const pinned = notes.find(n => n.pinned_to_deal_flag === 1 || n.pinned_to_deal_flag === true);\n    \n    if (pinned) {\n      // Strip HTML tags from the note content\n      let content = (pinned.content || '')\n        .replace(/<br\\s*\\/?>/gi, '\\n')\n        .replace(/<\\/?(p|div|li|ul|ol|h[1-6])[^>]*>/gi, '\\n')\n        .replace(/<[^>]+>/g, '')\n        .replace(/&nbsp;/g, ' ')\n        .replace(/&amp;/g, '&')\n        .replace(/&lt;/g, '<')\n        .replace(/&gt;/g, '>')\n        .replace(/&#39;/g, \"'\")\n        .replace(/&quot;/g, '\"')\n        .replace(/\\n{3,}/g, '\\n\\n')\n        .trim();\n      \n      // Cap at 3000 chars to stay within token limits\n      if (content.length > 3000) content = content.substring(0, 3000) + '\\n[...truncated]';\n      \n      deal_context = {\n        source: 'pinned_note',\n        deal_id: prev.deals[0].deal_id,\n        deal_title: prev.deals[0].title || '',\n        note_id: pinned.id,\n        updated_at: pinned.update_time || pinned.add_time || null,\n        content: content\n      };\n    } else {\n      // Fallback: grab the most recent note (could be a call transcript or manual note)\n      const latest = notes[0];\n      let content = (latest.content || '')\n        .replace(/<br\\s*\\/?>/gi, '\\n')\n        .replace(/<\\/?(p|div|li|ul|ol|h[1-6])[^>]*>/gi, '\\n')\n        .replace(/<[^>]+>/g, '')\n        .replace(/&nbsp;/g, ' ')\n        .replace(/&amp;/g, '&')\n        .replace(/&lt;/g, '<')\n        .replace(/&gt;/g, '>')\n        .replace(/&#39;/g, \"'\")\n        .replace(/&quot;/g, '\"')\n        .replace(/\\n{3,}/g, '\\n\\n')\n        .trim();\n      \n      if (content.length > 2000) content = content.substring(0, 2000) + '\\n[...truncated]';\n      \n      deal_context = {\n        source: 'latest_note',\n        deal_id: prev.deals[0].deal_id,\n        deal_title: prev.deals[0].title || '',\n        note_id: latest.id,\n        updated_at: latest.update_time || latest.add_time || null,\n        content: content\n      };\n    }\n  }\n} catch(e) {\n  // Graceful degradation \u2014 enricher continues without deal context\n}\n\nreturn [{ json: { ...prev, deal_context } }];"
+        }
+      }
+    ],
+    "connections": {
+      "Execute Workflow Trigger": {
+        "main": [
+          [
+            {
+              "node": "Test Fallback",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Test Fallback": {
+        "main": [
+          [
+            {
+              "node": "Step 1 - Pipedrive Person Search",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 1 - Pipedrive Person Search": {
+        "main": [
+          [
+            {
+              "node": "Step 1b - Parse Persons",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 1b - Parse Persons": {
+        "main": [
+          [
+            {
+              "node": "Step 2 - Fetch Deals",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 2 - Fetch Deals": {
+        "main": [
+          [
+            {
+              "node": "Step 2b - Merge Deals",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 3a - Build Monday Query": {
+        "main": [
+          [
+            {
+              "node": "Step 3b - Monday API",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 3b - Monday API": {
+        "main": [
+          [
+            {
+              "node": "Step 3c - Parse Monday",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 3c - Parse Monday": {
+        "main": [
+          [
+            {
+              "node": "Step 4 - QuickBooks Invoice Lookup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 4 - QuickBooks Invoice Lookup": {
+        "main": [
+          [
+            {
+              "node": "Step 4b - Parse Financials",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 4b - Parse Financials": {
+        "main": [
+          [
+            {
+              "node": "Step 5a - Gmail Get Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 5a - Gmail Get Thread": {
+        "main": [
+          [
+            {
+              "node": "Step 5b - Clean Thread",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 5b - Clean Thread": {
+        "main": [
+          [
+            {
+              "node": "Step 5c - Anthropic Summarize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 5c - Anthropic Summarize": {
+        "main": [
+          [
+            {
+              "node": "Step 5d - Parse Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 5d - Parse Summary": {
+        "main": [
+          [
+            {
+              "node": "Assemble Final Output",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 2b - Merge Deals": {
+        "main": [
+          [
+            {
+              "node": "Step 2c - Fetch Deal Notes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 2c - Fetch Deal Notes": {
+        "main": [
+          [
+            {
+              "node": "Step 2d - Extract Pinned Note",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 2d - Extract Pinned Note": {
+        "main": [
+          [
+            {
+              "node": "Step 3a - Build Monday Query",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Adam Lando",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-21T01:53:53.551Z",
+        "id": 1166,
+        "workflowId": "keDWe4d1X31uYgLf",
+        "versionId": "c99b4f70-68ac-4fca-b784-1c61cc36679d",
+        "event": "activated",
+        "userId": "8b08385f-879c-46dc-9695-c5472ba48f1a"
+      }
+    ]
+  }
+}
