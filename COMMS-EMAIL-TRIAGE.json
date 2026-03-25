@@ -1462,7 +1462,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const aiResp = $input.first().json;\nconst prev = $('Build Enriched B-Label Prompt').first().json;\nconst B_LABEL_MIN = 0.75;\n\nlet b_label = null;\nlet b_confidence = 0;\nlet reason = 'enrichment_failed';\n\ntry {\n  const text = (aiResp.content || []).filter(c => c.type === 'text').map(c => c.text).join('');\n  const clean = text.replace(/```json|```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  \n  if (parsed.b_label && parsed.b_label !== 'null') {\n    b_confidence = parsed.b_confidence || 0;\n    reason = parsed.reason || '';\n    \n    if (b_confidence >= B_LABEL_MIN && String(parsed.b_label).startsWith('TAG-SYS/Sales/')) {\n      b_label = parsed.b_label;\n    }\n  }\n} catch(e) {\n  reason = 'parse_error: ' + e.message;\n}\n\nconst { _enriched, _blabel_request, ...itemData } = prev;\nreturn [{ json: {\n  ...itemData,\n  b_label: b_label,\n  b_confidence: b_confidence,\n  _enriched_reason: reason\n} }];"
+        "jsCode": "const aiResp = $input.first().json;\nconst prev = $('Build Enriched B-Label Prompt').first().json;\nconst B_LABEL_MIN = 0.75;\n\nlet b_label = null;\nlet b_confidence = 0;\nlet reason = 'enrichment_failed';\nlet next_action = null;\n\ntry {\n  const text = (aiResp.content || []).filter(c => c.type === 'text').map(c => c.text).join('');\n  const clean = text.replace(/```json|```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  \n  // Capture next_action from B-label AI response\n  next_action = parsed.next_action || null;\n  \n  if (parsed.b_label && parsed.b_label !== 'null') {\n    b_confidence = parsed.b_confidence || 0;\n    reason = parsed.reason || '';\n    \n    if (b_confidence >= B_LABEL_MIN && String(parsed.b_label).startsWith('TAG-SYS/Sales/')) {\n      b_label = parsed.b_label;\n    }\n  }\n} catch(e) {\n  reason = 'parse_error: ' + e.message;\n}\n\nconst { _enriched, _blabel_request, ...itemData } = prev;\nreturn [{ json: {\n  ...itemData,\n  b_label: b_label,\n  b_confidence: b_confidence,\n  _enriched_reason: reason,\n  _enriched_next_action: next_action\n} }];"
       },
       "id": "parse_blabel",
       "name": "Apply Enriched B-Label",
@@ -1598,6 +1598,19 @@
       "parameters": {
         "jsCode": "// Phase 1: Hard skip form submissions \u2014 forms are intake-only, never reply\nconst subject = ($json.Subject || '').toLowerCase();\nconst from = ($json.From || '').toLowerCase();\n\n// Form submission emails from Elementor/WP contact forms\nif (subject.includes('form submission') && from.includes('info@dadsprinting.com')) {\n  return []; // Empty = workflow stops here, no downstream execution\n}\n\n// \"New message\" or \"New Form\" notifications from the website\nif ((subject.includes('new message - dads printing') || subject.includes('new form')) \n    && (from.includes('info@dadsprinting.com') || from.includes('noreply') || from.includes('wordpress'))) {\n  return []; // Hard skip\n}\n\n// Not a form \u2014 pass through unchanged\nreturn [$input.first()];"
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== SUPPRESSION GATE =====\n// Prevents duplicate/conflicting drafts by checking enriched context\nconst item = $input.first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst firstDeal = deals[0] || {};\nconst dealContext = enriched.deal_context || {};\nconst order = enriched.order || {};\n\n// Read next_action from B-label AI response if available\nconst next_action = item.next_action || item._enriched_next_action || null;\n\nlet draft_allowed = true;\nlet suppress_reason = '';\n\n// Rule 1: DQM owns this deal (DI note complete + stage >= 15)\nif (dealContext.di_note_complete && firstDeal.stage_id >= 15) {\n  draft_allowed = false;\n  suppress_reason = 'DQM owns this deal (Stage ' + firstDeal.stage_id + ' + DI complete)';\n}\n\n// Rule 2: Active order on Monday -> force CS routing\nif (order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'Active order on ' + (order.active_board || 'Monday');\n}\n\n// Rule 3: Deal at stage 16 (Invoice Paid) -- skip entirely\nif (firstDeal.stage_id === 16) {\n  draft_allowed = false;\n  suppress_reason = 'Deal already at Invoice Paid';\n}\n\n// Rule 4: If next_action is queue_quote and DQM is working it, suppress\nif (next_action === 'queue_quote' && firstDeal.stage_id >= 8 && dealContext.di_note_complete) {\n  draft_allowed = false;\n  suppress_reason = 'queue_quote suppressed - DQM pipeline active (Stage ' + firstDeal.stage_id + ')';\n}\n\n// If suppressed, null out the B-label so no downstream draft workflow fires\nif (!draft_allowed) {\n  return [{ json: { ...item, b_label: null, draft_allowed: draft_allowed, suppress_reason: suppress_reason } }];\n}\n\nreturn [{ json: { ...item, draft_allowed: true, suppress_reason: '' } }];"
+      },
+      "id": "suppression_gate",
+      "name": "Suppression Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5024,
+        -392
+      ]
     }
   ],
   "connections": {
@@ -1904,7 +1917,7 @@
       "main": [
         [
           {
-            "node": "If Has B Label - Sales",
+            "node": "Suppression Gate",
             "type": "main",
             "index": 0
           }
@@ -1981,6 +1994,17 @@
         [
           {
             "node": "30 second delay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Suppression Gate": {
+      "main": [
+        [
+          {
+            "node": "If Has B Label - Sales",
             "type": "main",
             "index": 0
           }
