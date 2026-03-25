@@ -904,7 +904,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        5136,
+        5400,
         -320
       ],
       "id": "a8183aed-e81f-4c89-a15d-b2a04a0ab225",
@@ -1479,7 +1479,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        5360,
+        5620,
         -352
       ],
       "parameters": {
@@ -1601,16 +1601,177 @@
     },
     {
       "parameters": {
-        "jsCode": "// ===== SUPPRESSION GATE =====\n// Prevents duplicate/conflicting drafts by checking enriched context\nconst item = $input.first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst firstDeal = deals[0] || {};\nconst dealContext = enriched.deal_context || {};\nconst order = enriched.order || {};\n\n// Read next_action from B-label AI response if available\nconst next_action = item.next_action || item._enriched_next_action || null;\n\nlet draft_allowed = true;\nlet suppress_reason = '';\n\n// Rule 1: DQM owns this deal (DI note complete + stage >= 15)\nif (dealContext.di_note_complete && firstDeal.stage_id >= 15) {\n  draft_allowed = false;\n  suppress_reason = 'DQM owns this deal (Stage ' + firstDeal.stage_id + ' + DI complete)';\n}\n\n// Rule 2: Active order on Monday -> force CS routing\nif (order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'Active order on ' + (order.active_board || 'Monday');\n}\n\n// Rule 3: Deal at stage 16 (Invoice Paid) -- skip entirely\nif (firstDeal.stage_id === 16) {\n  draft_allowed = false;\n  suppress_reason = 'Deal already at Invoice Paid';\n}\n\n// Rule 4: If next_action is queue_quote and DQM is working it, suppress\nif (next_action === 'queue_quote' && firstDeal.stage_id >= 8 && dealContext.di_note_complete) {\n  draft_allowed = false;\n  suppress_reason = 'queue_quote suppressed - DQM pipeline active (Stage ' + firstDeal.stage_id + ')';\n}\n\n// If suppressed, null out the B-label so no downstream draft workflow fires\nif (!draft_allowed) {\n  return [{ json: { ...item, b_label: null, draft_allowed: draft_allowed, suppress_reason: suppress_reason } }];\n}\n\nreturn [{ json: { ...item, draft_allowed: true, suppress_reason: '' } }];"
+        "jsCode": "// ===== SUPPRESSION GATE =====\n// Prevents duplicate/conflicting drafts by checking enriched context + cooldown\nconst item = $('Apply Enriched B-Label').first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst firstDeal = deals[0] || {};\nconst dealContext = enriched.deal_context || {};\nconst order = enriched.order || {};\n\n// Read next_action from B-label AI response if available\nconst next_action = item._enriched_next_action || null;\n\n// Draft cooldown: check audit sheet for recent drafts on this thread\nconst cooldownRows = $input.all().map(i => i.json);\nlet draft_cooldown = false;\nlet last_draft_source = null;\nlet last_draft_age_min = null;\n\nconst now = new Date();\nconst COOLDOWN_MINUTES = 60;\n\nfor (const row of cooldownRows) {\n  if (!row.timestamp || !row.b_label) continue;\n  const rowTime = new Date(row.timestamp);\n  if (isNaN(rowTime.getTime())) continue;\n  const ageMin = Math.round((now - rowTime) / 60000);\n  if (ageMin <= COOLDOWN_MINUTES && row.b_label && row.b_label !== 'null') {\n    draft_cooldown = true;\n    last_draft_source = row.b_label;\n    last_draft_age_min = ageMin;\n    break;\n  }\n}\n\nlet draft_allowed = true;\nlet suppress_reason = '';\n\n// Rule 0: Draft cooldown - another workflow drafted for this thread recently\nif (draft_cooldown) {\n  draft_allowed = false;\n  suppress_reason = 'Draft cooldown: ' + last_draft_source + ' drafted ' + last_draft_age_min + 'min ago';\n}\n\n// Rule 1: DQM owns this deal (DI note complete + stage >= 15)\nif (draft_allowed && dealContext.di_note_complete && firstDeal.stage_id >= 15) {\n  draft_allowed = false;\n  suppress_reason = 'DQM owns this deal (Stage ' + firstDeal.stage_id + ' + DI complete)';\n}\n\n// Rule 2: Active order on Monday -> force CS routing\nif (draft_allowed && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'Active order on ' + (order.active_board || 'Monday');\n}\n\n// Rule 3: Deal at stage 16 (Invoice Paid) -- skip entirely\nif (draft_allowed && firstDeal.stage_id === 16) {\n  draft_allowed = false;\n  suppress_reason = 'Deal already at Invoice Paid';\n}\n\n// Rule 4: queue_quote + DQM pipeline active suppression\nif (draft_allowed && next_action === 'queue_quote' && firstDeal.stage_id >= 8 && dealContext.di_note_complete) {\n  draft_allowed = false;\n  suppress_reason = 'queue_quote suppressed - DQM pipeline active (Stage ' + firstDeal.stage_id + ')';\n}\n\n\n// Rule 5: Lifecycle-aware suppression\nconst lifecycle = enriched.lifecycle_stage || null;\nif (draft_allowed && lifecycle === 'in_production' && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'In production lifecycle with active Monday order';\n}\nif (draft_allowed && lifecycle === 'delivered') {\n  draft_allowed = false;\n  suppress_reason = 'Thread lifecycle: delivered - no draft needed';\n}\n\n// If suppressed, null out the B-label so no downstream draft workflow fires\nif (!draft_allowed) {\n  return [{ json: { ...item, b_label: null, draft_allowed: draft_allowed, suppress_reason: suppress_reason, draft_cooldown: draft_cooldown, last_draft_source: last_draft_source, last_draft_age_min: last_draft_age_min } }];\n}\n\nreturn [{ json: { ...item, draft_allowed: true, suppress_reason: '', draft_cooldown: false, last_draft_source: null, last_draft_age_min: null } }];"
       },
       "id": "suppression_gate",
       "name": "Suppression Gate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5024,
+        5200,
         -392
       ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+          "mode": "list",
+          "cachedResultName": "AI TRIAGE AUDIT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "thread_id",
+              "lookupValue": "={{ $json.threadId }}"
+            }
+          ]
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5024,
+        -392
+      ],
+      "id": "draft_cooldown_check",
+      "name": "Draft Cooldown Check",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// WC PROMO Suppression Writer\n// When triage identifies a contact with an active deal, write to suppression sheet\n// WC PROMO (2lo7Nk4IWX7LvwcS) checks this sheet before drafting at 9 AM\nconst item = $input.first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst identity = enriched.identity || {};\n\n// Only write to suppression if there is an active deal\nif (deals.length > 0 && identity.email) {\n  // Pass through with suppression flag for downstream Google Sheets write\n  return [{ json: {\n    ...item,\n    _wc_suppress_email: identity.email,\n    _wc_suppress_name: identity.name || '',\n    _wc_suppress_deal: deals[0].title || '',\n    _wc_suppress_reason: 'Active deal: ' + (deals[0].title || 'unknown'),\n    _wc_suppress_timestamp: new Date().toISOString()\n  }}];\n}\n\nreturn [{ json: item }];"
+      },
+      "id": "wc_promo_suppress",
+      "name": "WC PROMO Suppress Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5100,
+        -520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+          "mode": "list",
+          "cachedResultName": "AI TRIAGE AUDIT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "WC_PROMO_SUPPRESS",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json._wc_suppress_email }}",
+            "name": "={{ $json._wc_suppress_name }}",
+            "deal_title": "={{ $json._wc_suppress_deal }}",
+            "reason": "={{ $json._wc_suppress_reason }}",
+            "added_at": "={{ $json._wc_suppress_timestamp }}",
+            "expires_at": "={{ new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "deal_title",
+              "displayName": "deal_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "added_at",
+              "displayName": "added_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expires_at",
+              "displayName": "expires_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5280,
+        -520
+      ],
+      "id": "wc_promo_sheet",
+      "name": "Write WC PROMO Suppression",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -1917,7 +2078,12 @@
       "main": [
         [
           {
-            "node": "Suppression Gate",
+            "node": "Draft Cooldown Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WC PROMO Suppress Check",
             "type": "main",
             "index": 0
           }
@@ -2005,6 +2171,28 @@
         [
           {
             "node": "If Has B Label - Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Cooldown Check": {
+      "main": [
+        [
+          {
+            "node": "Suppression Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WC PROMO Suppress Check": {
+      "main": [
+        [
+          {
+            "node": "Write WC PROMO Suppression",
             "type": "main",
             "index": 0
           }
