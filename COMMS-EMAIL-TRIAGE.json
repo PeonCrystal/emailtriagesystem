@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-25T08:47:06.238Z",
+  "updatedAt": "2026-03-25T19:12:43.337Z",
   "createdAt": "2026-01-15T03:46:00.148Z",
   "id": "FtmyhXLDvo21tqm4",
   "name": "EMAIL TRIAGE SYSTEM - - TIGHTEN",
@@ -904,7 +904,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        5400,
+        5136,
         -320
       ],
       "id": "a8183aed-e81f-4c89-a15d-b2a04a0ab225",
@@ -1479,7 +1479,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        5620,
+        5360,
         -352
       ],
       "parameters": {
@@ -1600,34 +1600,27 @@
       }
     },
     {
-      "parameters": {
-        "jsCode": "// ===== SUPPRESSION GATE =====\n// Prevents duplicate/conflicting drafts by checking enriched context + cooldown\nconst item = $('Apply Enriched B-Label').first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst firstDeal = deals[0] || {};\nconst dealContext = enriched.deal_context || {};\nconst order = enriched.order || {};\n\n// Read next_action from B-label AI response if available\nconst next_action = item._enriched_next_action || null;\n\n// Draft cooldown: check audit sheet for recent drafts on this thread\nconst cooldownRows = $input.all().map(i => i.json);\nlet draft_cooldown = false;\nlet last_draft_source = null;\nlet last_draft_age_min = null;\n\nconst now = new Date();\nconst COOLDOWN_MINUTES = 60;\n\nfor (const row of cooldownRows) {\n  if (!row.timestamp || !row.b_label) continue;\n  const rowTime = new Date(row.timestamp);\n  if (isNaN(rowTime.getTime())) continue;\n  const ageMin = Math.round((now - rowTime) / 60000);\n  if (ageMin <= COOLDOWN_MINUTES && row.b_label && row.b_label !== 'null') {\n    draft_cooldown = true;\n    last_draft_source = row.b_label;\n    last_draft_age_min = ageMin;\n    break;\n  }\n}\n\nlet draft_allowed = true;\nlet suppress_reason = '';\n\n// Rule 0: Draft cooldown - another workflow drafted for this thread recently\nif (draft_cooldown) {\n  draft_allowed = false;\n  suppress_reason = 'Draft cooldown: ' + last_draft_source + ' drafted ' + last_draft_age_min + 'min ago';\n}\n\n// Rule 1: DQM owns this deal (DI note complete + stage >= 15)\nif (draft_allowed && dealContext.di_note_complete && firstDeal.stage_id >= 15) {\n  draft_allowed = false;\n  suppress_reason = 'DQM owns this deal (Stage ' + firstDeal.stage_id + ' + DI complete)';\n}\n\n// Rule 2: Active order on Monday -> force CS routing\nif (draft_allowed && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'Active order on ' + (order.active_board || 'Monday');\n}\n\n// Rule 3: Deal at stage 16 (Invoice Paid) -- skip entirely\nif (draft_allowed && firstDeal.stage_id === 16) {\n  draft_allowed = false;\n  suppress_reason = 'Deal already at Invoice Paid';\n}\n\n// Rule 4: queue_quote + DQM pipeline active suppression\nif (draft_allowed && next_action === 'queue_quote' && firstDeal.stage_id >= 8 && dealContext.di_note_complete) {\n  draft_allowed = false;\n  suppress_reason = 'queue_quote suppressed - DQM pipeline active (Stage ' + firstDeal.stage_id + ')';\n}\n\n\n// Rule 5: Lifecycle-aware suppression\nconst lifecycle = enriched.lifecycle_stage || null;\nif (draft_allowed && lifecycle === 'in_production' && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'In production lifecycle with active Monday order';\n}\nif (draft_allowed && lifecycle === 'delivered') {\n  draft_allowed = false;\n  suppress_reason = 'Thread lifecycle: delivered - no draft needed';\n}\n\n// If suppressed, null out the B-label so no downstream draft workflow fires\nif (!draft_allowed) {\n  return [{ json: { ...item, b_label: null, draft_allowed: draft_allowed, suppress_reason: suppress_reason, draft_cooldown: draft_cooldown, last_draft_source: last_draft_source, last_draft_age_min: last_draft_age_min } }];\n}\n\nreturn [{ json: { ...item, draft_allowed: true, suppress_reason: '', draft_cooldown: false, last_draft_source: null, last_draft_age_min: null } }];"
-      },
-      "id": "suppression_gate",
-      "name": "Suppression Gate",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "draft_cooldown_check",
+      "name": "Draft Cooldown Check",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
       "position": [
-        5200,
+        5024,
         -392
-      ]
-    },
-    {
+      ],
       "parameters": {
         "operation": "read",
         "documentId": {
           "__rl": true,
           "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
           "mode": "list",
-          "cachedResultName": "AI TRIAGE AUDIT",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit?usp=drivesdk"
+          "cachedResultName": "AI TRIAGE AUDIT"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit#gid=0"
+          "cachedResultName": "Sheet1"
         },
         "filtersUI": {
           "values": [
@@ -1641,14 +1634,6 @@
           "returnAllMatches": true
         }
       },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "position": [
-        5024,
-        -392
-      ],
-      "id": "draft_cooldown_check",
-      "name": "Draft Cooldown Check",
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "odQ7zf27bjmUdApL",
@@ -1658,9 +1643,19 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "suppression_gate",
+      "name": "Suppression Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5200,
+        -392
+      ],
       "parameters": {
-        "jsCode": "// WC PROMO Suppression Writer\n// When triage identifies a contact with an active deal, write to suppression sheet\n// WC PROMO (2lo7Nk4IWX7LvwcS) checks this sheet before drafting at 9 AM\nconst item = $input.first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst identity = enriched.identity || {};\n\n// Only write to suppression if there is an active deal\nif (deals.length > 0 && identity.email) {\n  // Pass through with suppression flag for downstream Google Sheets write\n  return [{ json: {\n    ...item,\n    _wc_suppress_email: identity.email,\n    _wc_suppress_name: identity.name || '',\n    _wc_suppress_deal: deals[0].title || '',\n    _wc_suppress_reason: 'Active deal: ' + (deals[0].title || 'unknown'),\n    _wc_suppress_timestamp: new Date().toISOString()\n  }}];\n}\n\nreturn [{ json: item }];"
-      },
+        "jsCode": "// ===== SUPPRESSION GATE =====\n// Prevents duplicate/conflicting drafts by checking enriched context + cooldown\nconst item = $('Apply Enriched B-Label').first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst firstDeal = deals[0] || {};\nconst dealContext = enriched.deal_context || {};\nconst order = enriched.order || {};\n\n// Read next_action from B-label AI response if available\nconst next_action = item._enriched_next_action || null;\n\n// Draft cooldown: check audit sheet for recent drafts on this thread\nconst cooldownRows = $input.all().map(i => i.json);\nlet draft_cooldown = false;\nlet last_draft_source = null;\nlet last_draft_age_min = null;\n\nconst now = new Date();\nconst COOLDOWN_MINUTES = 60;\n\nfor (const row of cooldownRows) {\n  if (!row.timestamp || !row.b_label) continue;\n  const rowTime = new Date(row.timestamp);\n  if (isNaN(rowTime.getTime())) continue;\n  const ageMin = Math.round((now - rowTime) / 60000);\n  if (ageMin <= COOLDOWN_MINUTES && row.b_label && row.b_label !== 'null') {\n    draft_cooldown = true;\n    last_draft_source = row.b_label;\n    last_draft_age_min = ageMin;\n    break;\n  }\n}\n\nlet draft_allowed = true;\nlet suppress_reason = '';\n\n// Rule 0: Draft cooldown - another workflow drafted for this thread recently\nif (draft_cooldown) {\n  draft_allowed = false;\n  suppress_reason = 'Draft cooldown: ' + last_draft_source + ' drafted ' + last_draft_age_min + 'min ago';\n}\n\n// Rule 1: DQM owns this deal (DI note complete + stage >= 15)\nif (draft_allowed && dealContext.di_note_complete && firstDeal.stage_id >= 15) {\n  draft_allowed = false;\n  suppress_reason = 'DQM owns this deal (Stage ' + firstDeal.stage_id + ' + DI complete)';\n}\n\n// Rule 2: Active order on Monday -> force CS routing\nif (draft_allowed && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'Active order on ' + (order.active_board || 'Monday');\n}\n\n// Rule 3: Deal at stage 16 (Invoice Paid) -- skip entirely\nif (draft_allowed && firstDeal.stage_id === 16) {\n  draft_allowed = false;\n  suppress_reason = 'Deal already at Invoice Paid';\n}\n\n// Rule 4: queue_quote + DQM pipeline active suppression\nif (draft_allowed && next_action === 'queue_quote' && firstDeal.stage_id >= 8 && dealContext.di_note_complete) {\n  draft_allowed = false;\n  suppress_reason = 'queue_quote suppressed - DQM pipeline active (Stage ' + firstDeal.stage_id + ')';\n}\n\n\n// Rule 5: Lifecycle-aware suppression\nconst lifecycle = enriched.lifecycle_stage || null;\nif (draft_allowed && lifecycle === 'in_production' && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'In production lifecycle with active Monday order';\n}\nif (draft_allowed && lifecycle === 'delivered') {\n  draft_allowed = false;\n  suppress_reason = 'Thread lifecycle: delivered - no draft needed';\n}\n\n// If suppressed, null out the B-label so no downstream draft workflow fires\nif (!draft_allowed) {\n  return [{ json: { ...item, b_label: null, draft_allowed: draft_allowed, suppress_reason: suppress_reason, draft_cooldown: draft_cooldown, last_draft_source: last_draft_source, last_draft_age_min: last_draft_age_min } }];\n}\n\nreturn [{ json: { ...item, draft_allowed: true, suppress_reason: '', draft_cooldown: false, last_draft_source: null, last_draft_age_min: null } }];"
+      }
+    },
+    {
       "id": "wc_promo_suppress",
       "name": "WC PROMO Suppress Check",
       "type": "n8n-nodes-base.code",
@@ -1668,17 +1663,27 @@
       "position": [
         5100,
         -520
-      ]
+      ],
+      "parameters": {
+        "jsCode": "// WC PROMO Suppression Writer\n// When triage identifies a contact with an active deal, write to suppression sheet\n// WC PROMO (2lo7Nk4IWX7LvwcS) checks this sheet before drafting at 9 AM\nconst item = $input.first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst identity = enriched.identity || {};\n\n// Only write to suppression if there is an active deal\nif (deals.length > 0 && identity.email) {\n  // Pass through with suppression flag for downstream Google Sheets write\n  return [{ json: {\n    ...item,\n    _wc_suppress_email: identity.email,\n    _wc_suppress_name: identity.name || '',\n    _wc_suppress_deal: deals[0].title || '',\n    _wc_suppress_reason: 'Active deal: ' + (deals[0].title || 'unknown'),\n    _wc_suppress_timestamp: new Date().toISOString()\n  }}];\n}\n\nreturn [{ json: item }];"
+      }
     },
     {
+      "id": "wc_promo_sheet",
+      "name": "Write WC PROMO Suppression",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5280,
+        -520
+      ],
       "parameters": {
         "operation": "append",
         "documentId": {
           "__rl": true,
           "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
           "mode": "list",
-          "cachedResultName": "AI TRIAGE AUDIT",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA/edit?usp=drivesdk"
+          "cachedResultName": "AI TRIAGE AUDIT"
         },
         "sheetName": {
           "__rl": true,
@@ -1757,14 +1762,6 @@
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "position": [
-        5280,
-        -520
-      ],
-      "id": "wc_promo_sheet",
-      "name": "Write WC PROMO Suppression",
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "odQ7zf27bjmUdApL",
@@ -2074,22 +2071,6 @@
         ]
       ]
     },
-    "Apply Enriched B-Label": {
-      "main": [
-        [
-          {
-            "node": "Draft Cooldown Check",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "WC PROMO Suppress Check",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "If Has B Label - Sales": {
       "main": [
         [
@@ -2166,11 +2147,16 @@
         ]
       ]
     },
-    "Suppression Gate": {
+    "Apply Enriched B-Label": {
       "main": [
         [
           {
-            "node": "If Has B Label - Sales",
+            "node": "Draft Cooldown Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WC PROMO Suppress Check",
             "type": "main",
             "index": 0
           }
@@ -2182,6 +2168,17 @@
         [
           {
             "node": "Suppression Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Suppression Gate": {
+      "main": [
+        [
+          {
+            "node": "If Has B Label - Sales",
             "type": "main",
             "index": 0
           }
@@ -2209,9 +2206,9 @@
   "staticData": {
     "node:Gmail Trigger": {
       "Gmail Trigger": {
-        "lastTimeChecked": 1774429029,
+        "lastTimeChecked": 1774845548,
         "possibleDuplicates": [
-          "19d24365a9982679"
+          "19d3d0a050e99f7e"
         ]
       }
     }
@@ -2220,9 +2217,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "7b235803-ebff-4d12-a37d-7c3c02a5285e",
-  "activeVersionId": "7b235803-ebff-4d12-a37d-7c3c02a5285e",
-  "versionCounter": 9144,
+  "versionId": "8cad62c6-33f6-49f5-818c-b1dcf5e9d5c0",
+  "activeVersionId": "8cad62c6-33f6-49f5-818c-b1dcf5e9d5c0",
+  "versionCounter": 9761,
   "triggerCount": 1,
   "shared": [
     {
@@ -2247,7 +2244,7 @@
             "userId": "8b08385f-879c-46dc-9695-c5472ba48f1a",
             "projectId": "p5kbw6tmB2iGubmW",
             "user": {
-              "updatedAt": "2026-03-25T07:00:05.000Z",
+              "updatedAt": "2026-03-30T02:24:11.000Z",
               "createdAt": "2025-09-10T00:20:54.119Z",
               "id": "8b08385f-879c-46dc-9695-c5472ba48f1a",
               "email": "info@dadsprinting.com",
@@ -2274,7 +2271,7 @@
               },
               "disabled": false,
               "mfaEnabled": false,
-              "lastActiveAt": "2026-03-24",
+              "lastActiveAt": "2026-03-29",
               "isPending": false
             }
           }
@@ -2297,9 +2294,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-03-25T08:47:06.239Z",
-    "createdAt": "2026-03-25T08:47:06.239Z",
-    "versionId": "7b235803-ebff-4d12-a37d-7c3c02a5285e",
+    "updatedAt": "2026-03-25T19:12:43.339Z",
+    "createdAt": "2026-03-25T19:12:43.339Z",
+    "versionId": "8cad62c6-33f6-49f5-818c-b1dcf5e9d5c0",
     "workflowId": "FtmyhXLDvo21tqm4",
     "nodes": [
       {
@@ -2346,7 +2343,7 @@
                 "content": "You are a production-grade email classification engine.\n\nYou do not write emails.\nYou do not roleplay.\nYou do not explain things.\n\nYou output only valid JSON.\n\nIf anything is ambiguous, choose TAG-SYS/Unsure.\n\nFollow all instructions strictly.\n"
               },
               {
-                "content": "=You are an enterprise email triage engine for Adam's company.\n\nYour job is NOT to be helpful.\nYour job is to correctly classify, route, and control state inside Gmail.\n\nYou will receive:\n- Email subject\n- Email body/snippet\n- Sender\n- Existing Gmail labels (full names)\n\nYou must output a single JSON object.\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nGLOBAL RULES\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\n1) You MUST assign exactly one A-label  \n2) You MAY assign one B-label, but only if allowed AND both confidences meet threshold  \n3) Never hallucinate facts  \n4) If uncertain \u2192 TAG-SYS/Unsure  \n5) Check existing TAG-SYS labels to decide whether to skip:\n\n   a) If the email has a THREE-SEGMENT TAG-SYS B-label (e.g. \"TAG-SYS/Sales/QUOTE\", \"TAG-SYS/Sales/LOST\", \"TAG-SYS/Sales/NEEDS-INFO\", \"TAG-SYS/Sales/INVOICE\", \"TAG-SYS/CS/ROUTE-CS\", \"TAG-SYS/CS/INVOLVE\", \"TAG-SYS/CS/DELEGATED\") then a B-label is already assigned. Return:\n   {\n     \"skip\": true,\n     \"reason\": \"Already has B-label assigned\"\n   }\n\n   b) If the email has \"TAG-SYS/Sales\" or \"TAG-SYS/CS\" but NO three-segment B-label from the list above, this is a reply on an active thread that needs B-label classification. DO NOT SKIP. Keep the same A-label and classify the B-label normally based on the new email content.\n\n   c) If the email has any OTHER A-only TAG-SYS label (\"TAG-SYS/OPS\", \"TAG-SYS/Personal\", \"TAG-SYS/GOV\", \"TAG-SYS/Receipts 2026\", \"TAG-SYS/Payable\", \"TAG-SYS/Receivable\", \"TAG-SYS/Unsure\") these categories have no B-labels. Return:\n   {\n     \"skip\": true,\n     \"reason\": \"Already processed (non-sales/CS A-label)\"\n   }\n\n6) Assume this runs on EVERY new email\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nDO NOT PROCESS IF\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nIf the email has label \"SENT\", return:\n{\n  \"skip\": true,\n  \"reason\": \"Outbound email (SENT)\"\n}\n\nIf the email has label:\n\n- COMMS-CONTACTFORM\n- COMMS-POSTFOLLOWUP\n- FORMS\n- Notifications\n- \"TAG-SYS/Receipts\"\n- \"TAG-SYS/Receivable\"\n\nReturn:\n{\n  \"skip\": true,\n  \"reason\": \"Excluded by system label\"\n}\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nPERSONAL OVERRIDE\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nIf the email is about ANY of the following, it MUST be classified as TAG-SYS/Personal\nand MUST NOT be classified as Sales or CS:\n\n- Home services (kitchen, counters, plumbing, electrical, renovations)\n- Personal purchases for Adam (NOT blanks/garments being sent for decoration)\n- Medical, insurance, travel newsletters, banking alerts\n- Real estate unrelated to Adam's businesses\n- Friends or family personal matters\n- Any non-revenue-generating personal matter\n- Travel deal newsletters (Secret Flying, YVR Deals, etc.)\n- Social media digests (LinkedIn job alerts, Nextdoor posts)\n\nThis rule OVERRIDES ALL SALES LOGIC \u2014 but ONLY when NO business signals are present (see next section).\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nBUSINESS SIGNAL OVERRIDE (CRITICAL)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nThis section OVERRIDES the Personal classification.\n\nIf ANY of these signals are present, the email is BUSINESS, not Personal:\n\n- References specific products: jerseys, hoodies, t-shirts, crewnecks, patches, sublimation, embroidery, DTG, screenprint, tote bags, socks, hats, jackets, blanks, garments, denim jackets\n- Contains quantities, sizes, roster names, order numbers, PO numbers\n- References \"order\", \"quote\", \"invoice\", \"proof\", \"mockup\", \"artwork\", \"reorder\"\n- Sender is a known customer replying to a thread about an order\n- Email is about garments or blanks being shipped/delivered TO Dad's Printing for decoration\n- Email references a booking/meeting with a salesperson (Joel, Melcolm, Kirsty) via TidyCal, Calendly, or any scheduling tool \u2014 this is SALES, not Personal\n- Email is from a current or former staff member about wages, hiring, job roles, work tasks \u2014 this is OPS, not Personal\n- Email is CC'd to or references orders@, production@, operations@, admin@, sales@, sales2@ \u2014 this is BUSINESS\n- A customer is angry, escalating, or threatening about an existing order \u2014 this is CS, not Personal, even if the sender's email looks personal (hotmail, gmail, etc.)\n\nEXAMPLES OF COMMON MISCLASSIFICATIONS TO AVOID:\n- \"30 denim jackets being delivered directly to you\" from a customer \u2192 This is OPS (blanks arriving for decoration), NOT Personal shopping\n- A customer confirming jersey names/numbers/sizes in a reply thread \u2192 This is Sales/QUOTE, NOT Personal\n- A staff member asking for shirts to be printed (even personal ones) \u2192 This is Sales (internal order)\n- Someone rescheduling a TidyCal meeting with Joel \u2192 This is Sales, NOT Personal\n- Husband/wife replying angrily to an order thread \u2192 This is CS/INVOLVE, NOT Personal\n- A job applicant following up on a role \u2192 This is OPS (hiring), NOT Personal\n\nWhen in doubt between Personal and a business category, choose the BUSINESS category.\nThe previous rule was \"when in doubt choose Personal\" \u2014 that caused too many misses.\nNow: if there is ANY business signal, classify as business.\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nRECEIPTS vs PAYABLES (MANDATORY)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nThis is the most important financial distinction.\n\nReceipts = payment already happened OR a transaction confirmation/receipt.\nPayables = payment is required/requested.\n\nALL receipts from ANY source get TAG-SYS/Receipts 2026:\n- Restaurant receipts (Vancouver Club, any dining)\n- Store purchase confirmations\n- Subscription payment confirmations\n- ANY email that is clearly a receipt or transaction confirmation\n\nDo NOT classify receipts as Personal just because they are from a restaurant or personal venue.\nA receipt is a receipt. Always use TAG-SYS/Receipts 2026.\n\nIf the email confirms a completed transaction:\n\u2192 TAG-SYS/Receipts 2026\n\nIf the email requests payment or contains an invoice:\n\u2192 TAG-SYS/Payable\n\nIf BOTH appear:\n- Choose Payable ONLY if money is still owed  \n- Otherwise choose Receipts 2026\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nA-LABELS (Primary Classification)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nChoose exactly ONE:\n\nTAG-SYS/Personal  \nFriends, family, landlords, personal services, home services, medical, travel newsletters, social digests. ONLY when NO business signals are present.\n\nTAG-SYS/GOV  \nCRA, government, courts, tax agencies, legal filings.\n\nTAG-SYS/OPS  \nVendors, software, tools, suppliers, staff matters (wages, hiring, job roles, work tasks), shipping notifications, subscriptions, vendor solicitations selling to us, blanks/garments being delivered for decoration.\n\nTAG-SYS/Receivable  \nMoney coming IN. Client payments, deposits, Stripe, PayPal, invoices paid.\n\nTAG-SYS/Payable  \nMoney going OUT. Bills, invoices to pay, vendor charges.\n\nTAG-SYS/Receipts 2026  \nALL completed purchases and transaction confirmations for bookkeeping. Restaurant receipts, store receipts, subscription confirmations. This applies to ALL receipts regardless of whether they are personal or business.\n\nTAG-SYS/CS  \nExisting customer with a problem: wrong order, delay, defect, complaint. Includes family members or associates replying on behalf of a customer about an order issue.\n\nTAG-SYS/Sales  \nSomeone trying to buy, quote, reorder, negotiate, or start an order with Adam's businesses. Includes internal staff requesting prints. Includes prospects booking or rescheduling sales meetings.\nDO NOT use for vendors selling to us or truly personal matters with no business signals.\n\nTAG-SYS/Unsure  \nAmbiguous or mixed signals.\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nB-LABEL RULES (DUAL CONFIDENCE GATE)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nB-labels require BOTH:\n- a_confidence \u2265 0.70\n- b_confidence \u2265 0.80\n\nIf EITHER confidence is below threshold \u2192 b_label MUST be null\n\n\nCS B-Labels (only if A = TAG-SYS/CS):\n- TAG-SYS/CS/ROUTE-CS\n- TAG-SYS/CS/INVOLVE\n- TAG-SYS/CS/DELEGATED\n\n\nSales B-Labels (only if A = TAG-SYS/Sales):\n- TAG-SYS/Sales/NEEDS-INFO\n- TAG-SYS/Sales/QUOTE\n- TAG-SYS/Sales/INVOICE\n- TAG-SYS/Sales/LOST\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nNEVER CLASSIFY AS SALES (HARD EXCLUSIONS)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nThe following emails MUST NEVER receive TAG-SYS/Sales or any Sales B-label.\nClassify them as TAG-SYS/OPS or TAG-SYS/Unsure instead.\n\n1. VENDOR / SUPPLIER EMAILS: Emails about POs, shipments, order confirmations, inventory, or pricing FROM vendors/suppliers (not customers). Includes emails from SS Activewear, S&S Canada, SanMar, AlphaBroder, any blank supplier, overseas factories, or any company sending us product \u2014 these are OPS.\n\n2. COLD OUTREACH / PITCHES TO US: Someone pitching Adam a product, demo, service, or partnership where THEY want to sell to US. Keywords: \"quick demo\", \"would love to show you\", \"I help businesses like yours\", \"let me know if you're interested in our platform.\" These are OPS (vendor solicitations), not Sales.\n\n3. SYSTEM / PLATFORM NOTIFICATIONS: Automated emails from Monday.com, Pipedrive, QuickBooks, JustCall, Shopify, WooCommerce, Google, Cloudways, or any SaaS tool about system events, updates, or alerts. These are OPS.\n\n4. INTERNAL EMAILS: Emails from @dadsprinting.com, @proteamjerseys.com, or @dtfvancouver.com addresses that are internal team communications \u2014 these are OPS unless they are explicitly placing a personal order.\n\n5. FORM NOTIFICATION DUPLICATES: Elementor form submission notifications (subject contains \"New message - Dads Printing Site\" or \"New Form\") \u2014 these are already handled by the Contact Form webhook. Classify as skip if COMMS-CONTACTFORM label is present, otherwise OPS.\n\nIf an email matches ANY of the 5 categories above, it is NOT a sales lead regardless of what product terms appear in the body.\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nNEEDS-INFO vs QUOTE (CRITICAL)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nWHEN IN DOUBT, DO NOT ASSIGN A B-LABEL.\n\nIf unsure whether an email is NEEDS-INFO or QUOTE \u2192 set b_label to null.\nThe email will remain tagged as TAG-SYS/Sales only, for human review.\n\nOnly use NEEDS-INFO if ALL THREE are true:\n1. Product category is completely unclear (can't tell if it's apparel, patches, promo, etc.)\n2. No quantity or even a rough range is mentioned\n3. Customer has not referenced any past order or said \"reorder\" / \"same as last time\"\n\nOnly use QUOTE if you are CONFIDENT:\n- Product type is clearly identifiable\n- Customer gave a quantity (even a range like \"50-100\")\n- You could quote with reasonable assumptions\n- Customer mentioned a previous order or said \"same as last time\"\n\nIf only minor details are missing (sizes, colors, exact date) \u2192 QUOTE\nIf you're unsure \u2192 b_label = null, let human decide\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nMISSING INFO\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nIf B-label = TAG-SYS/Sales/NEEDS-INFO,\nreturn an array of what is missing.\n\nOtherwise return []\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nCONFIDENCE SCORING\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\na_confidence = how certain you are in the A-label choice\nb_confidence = how certain you are in the B-label choice\n\nScale:\n- 0.90\u20131.00 \u2192 very clear, obvious\n- 0.80\u20130.89 \u2192 confident\n- 0.70\u20130.79 \u2192 reasonable but not perfect\n- < 0.70 \u2192 uncertain\n\nWhen unsure between NEEDS-INFO and QUOTE \u2192 set b_label to null (no B-label assigned)\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nOUTPUT FORMAT (STRICT)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nReturn ONLY this JSON:\n\n{\n  \"skip\": false,\n  \"a_label\": \"TAG-SYS/Sales\",\n  \"a_confidence\": 0.92,\n  \"b_label\": \"TAG-SYS/Sales/QUOTE\",\n  \"b_confidence\": 0.85,\n  \"reason\": \"Short explanation\",\n  \"missing_info\": [],\n  \"next_action\": \"human|draft_email|queue_quote|close_deal|route_cs|none\"\n}\n\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nEMAIL INPUT\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nSubject:\n{{ $json.Subject }}\n\nFrom:\n{{ $json.From }}\n\nTo:\n{{ $json.To }}\n\nBody snippet:\n{{ $json.snippet || \"\" }}\n\nExisting Gmail labels:\n{{ ($json.labels || []).map(l => l.name) }}"
+                "content": "=You are an enterprise email triage engine for Adam's company.\n\nYour job is NOT to be helpful.\nYour job is to correctly classify, route, and control state inside Gmail.\n\nYou will receive:\n- Email subject\n- Email body/snippet\n- Sender\n- Existing Gmail labels (full names)\n\nYou must output a single JSON object.\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nGLOBAL RULES\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\n1) You MUST assign exactly one A-label  \n2) You MAY assign one B-label, but only if allowed AND both confidences meet threshold  \n3) Never hallucinate facts  \n4) If uncertain \u2192 TAG-SYS/Unsure  \n5) Check existing TAG-SYS labels to decide whether to skip:\n\n   a) If the email has a THREE-SEGMENT TAG-SYS B-label (e.g. \"TAG-SYS/Sales/QUOTE\", \"TAG-SYS/Sales/LOST\", \"TAG-SYS/Sales/NEEDS-INFO\", \"TAG-SYS/Sales/INVOICE\", \"TAG-SYS/CS/ROUTE-CS\", \"TAG-SYS/CS/INVOLVE\", \"TAG-SYS/CS/DELEGATED\") then a B-label is already assigned. Return:\n   {\n     \"skip\": true,\n     \"reason\": \"Already has B-label assigned\"\n   }\n\n   b) If the email has \"TAG-SYS/Sales\" or \"TAG-SYS/CS\" but NO three-segment B-label from the list above, this is a reply on an active thread that needs B-label classification. DO NOT SKIP. Keep the same A-label and classify the B-label normally based on the new email content.\n\n   c) If the email has any OTHER A-only TAG-SYS label (\"TAG-SYS/OPS\", \"TAG-SYS/Personal\", \"TAG-SYS/GOV\", \"TAG-SYS/Receipts 2026\", \"TAG-SYS/Payable\", \"TAG-SYS/Receivable\", \"TAG-SYS/Unsure\") these categories have no B-labels. Return:\n   {\n     \"skip\": true,\n     \"reason\": \"Already processed (non-sales/CS A-label)\"\n   }\n\n6) Assume this runs on EVERY new email\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nDO NOT PROCESS IF\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nIf the email has label \"SENT\", return:\n{\n  \"skip\": true,\n  \"reason\": \"Outbound email (SENT)\"\n}\n\nIf the email has label:\n\n- COMMS-CONTACTFORM\n- COMMS-POSTFOLLOWUP\n- FORMS\n- Notifications\n- \"TAG-SYS/Receipts\"\n- \"TAG-SYS/Receivable\"\n\nReturn:\n{\n  \"skip\": true,\n  \"reason\": \"Excluded by system label\"\n}\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nPERSONAL OVERRIDE\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nIf the email is about ANY of the following, it MUST be classified as TAG-SYS/Personal\nand MUST NOT be classified as Sales or CS:\n\n- Home services (kitchen, counters, plumbing, electrical, renovations)\n- Personal purchases for Adam (NOT blanks/garments being sent for decoration)\n- Medical, insurance, travel newsletters, banking alerts\n- Real estate unrelated to Adam's businesses\n- Friends or family personal matters\n- Any non-revenue-generating personal matter\n- Travel deal newsletters (Secret Flying, YVR Deals, etc.)\n- Social media digests (LinkedIn job alerts, Nextdoor posts)\n\nThis rule OVERRIDES ALL SALES LOGIC \u2014 but ONLY when NO business signals are present (see next section).\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nBUSINESS SIGNAL OVERRIDE (CRITICAL)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nThis section OVERRIDES the Personal classification.\n\nIf ANY of these signals are present, the email is BUSINESS, not Personal:\n\n- References specific products: jerseys, hoodies, t-shirts, crewnecks, patches, sublimation, embroidery, DTG, screenprint, tote bags, socks, hats, jackets, blanks, garments, denim jackets\n- Contains quantities, sizes, roster names, order numbers, PO numbers\n- References \"order\", \"quote\", \"invoice\", \"proof\", \"mockup\", \"artwork\", \"reorder\"\n- Sender is a known customer replying to a thread about an order\n- Email is about garments or blanks being shipped/delivered TO Dad's Printing for decoration\n- Email references a booking/meeting with a salesperson (Joel, Melcolm) via TidyCal, Calendly, or any scheduling tool \u2014 this is SALES, not Personal\n- Email is from a current or former staff member about wages, hiring, job roles, work tasks \u2014 this is OPS, not Personal\n- Email is CC'd to or references orders@, production@, operations@, admin@, sales@, sales2@ \u2014 this is BUSINESS\n- A customer is angry, escalating, or threatening about an existing order \u2014 this is CS, not Personal, even if the sender's email looks personal (hotmail, gmail, etc.)\n\nEXAMPLES OF COMMON MISCLASSIFICATIONS TO AVOID:\n- \"30 denim jackets being delivered directly to you\" from a customer \u2192 This is OPS (blanks arriving for decoration), NOT Personal shopping\n- A customer confirming jersey names/numbers/sizes in a reply thread \u2192 This is Sales/QUOTE, NOT Personal\n- A staff member asking for shirts to be printed (even personal ones) \u2192 This is Sales (internal order)\n- Someone rescheduling a TidyCal meeting with Joel \u2192 This is Sales, NOT Personal\n- Husband/wife replying angrily to an order thread \u2192 This is CS/INVOLVE, NOT Personal\n- A job applicant following up on a role \u2192 This is OPS (hiring), NOT Personal\n\nWhen in doubt between Personal and a business category, choose the BUSINESS category.\nThe previous rule was \"when in doubt choose Personal\" \u2014 that caused too many misses.\nNow: if there is ANY business signal, classify as business.\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nRECEIPTS vs PAYABLES (MANDATORY)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nThis is the most important financial distinction.\n\nReceipts = payment already happened OR a transaction confirmation/receipt.\nPayables = payment is required/requested.\n\nALL receipts from ANY source get TAG-SYS/Receipts 2026:\n- Restaurant receipts (Vancouver Club, any dining)\n- Store purchase confirmations\n- Subscription payment confirmations\n- ANY email that is clearly a receipt or transaction confirmation\n\nDo NOT classify receipts as Personal just because they are from a restaurant or personal venue.\nA receipt is a receipt. Always use TAG-SYS/Receipts 2026.\n\nIf the email confirms a completed transaction:\n\u2192 TAG-SYS/Receipts 2026\n\nIf the email requests payment or contains an invoice:\n\u2192 TAG-SYS/Payable\n\nIf BOTH appear:\n- Choose Payable ONLY if money is still owed  \n- Otherwise choose Receipts 2026\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nA-LABELS (Primary Classification)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nChoose exactly ONE:\n\nTAG-SYS/Personal  \nFriends, family, landlords, personal services, home services, medical, travel newsletters, social digests. ONLY when NO business signals are present.\n\nTAG-SYS/GOV  \nCRA, government, courts, tax agencies, legal filings.\n\nTAG-SYS/OPS  \nVendors, software, tools, suppliers, staff matters (wages, hiring, job roles, work tasks), shipping notifications, subscriptions, vendor solicitations selling to us, blanks/garments being delivered for decoration.\n\nTAG-SYS/Receivable  \nMoney coming IN. Client payments, deposits, Stripe, PayPal, invoices paid.\n\nTAG-SYS/Payable  \nMoney going OUT. Bills, invoices to pay, vendor charges.\n\nTAG-SYS/Receipts 2026  \nALL completed purchases and transaction confirmations for bookkeeping. Restaurant receipts, store receipts, subscription confirmations. This applies to ALL receipts regardless of whether they are personal or business.\n\nTAG-SYS/CS  \nExisting customer with a problem: wrong order, delay, defect, complaint. Includes family members or associates replying on behalf of a customer about an order issue.\n\nTAG-SYS/Sales  \nSomeone trying to buy, quote, reorder, negotiate, or start an order with Adam's businesses. Includes internal staff requesting prints. Includes prospects booking or rescheduling sales meetings.\nDO NOT use for vendors selling to us or truly personal matters with no business signals.\n\nTAG-SYS/Unsure  \nAmbiguous or mixed signals.\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nB-LABEL RULES (DUAL CONFIDENCE GATE)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nB-labels require BOTH:\n- a_confidence \u2265 0.70\n- b_confidence \u2265 0.80\n\nIf EITHER confidence is below threshold \u2192 b_label MUST be null\n\n\nCS B-Labels (only if A = TAG-SYS/CS):\n- TAG-SYS/CS/ROUTE-CS\n- TAG-SYS/CS/INVOLVE\n- TAG-SYS/CS/DELEGATED\n\n\nSales B-Labels (only if A = TAG-SYS/Sales):\n- TAG-SYS/Sales/NEEDS-INFO\n- TAG-SYS/Sales/QUOTE\n- TAG-SYS/Sales/INVOICE\n- TAG-SYS/Sales/LOST\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nNEVER CLASSIFY AS SALES (HARD EXCLUSIONS)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nThe following emails MUST NEVER receive TAG-SYS/Sales or any Sales B-label.\nClassify them as TAG-SYS/OPS or TAG-SYS/Unsure instead.\n\n1. VENDOR / SUPPLIER EMAILS: Emails about POs, shipments, order confirmations, inventory, or pricing FROM vendors/suppliers (not customers). Includes emails from SS Activewear, S&S Canada, SanMar, AlphaBroder, any blank supplier, overseas factories, or any company sending us product \u2014 these are OPS.\n\n2. COLD OUTREACH / PITCHES TO US: Someone pitching Adam a product, demo, service, or partnership where THEY want to sell to US. Keywords: \"quick demo\", \"would love to show you\", \"I help businesses like yours\", \"let me know if you're interested in our platform.\" These are OPS (vendor solicitations), not Sales.\n\n3. SYSTEM / PLATFORM NOTIFICATIONS: Automated emails from Monday.com, Pipedrive, QuickBooks, JustCall, Shopify, WooCommerce, Google, Cloudways, or any SaaS tool about system events, updates, or alerts. These are OPS.\n\n4. INTERNAL EMAILS: Emails from @dadsprinting.com, @proteamjerseys.com, or @dtfvancouver.com addresses that are internal team communications \u2014 these are OPS unless they are explicitly placing a personal order.\n\n5. FORM NOTIFICATION DUPLICATES: Elementor form submission notifications (subject contains \"New message - Dads Printing Site\" or \"New Form\") \u2014 these are already handled by the Contact Form webhook. Classify as skip if COMMS-CONTACTFORM label is present, otherwise OPS.\n\nIf an email matches ANY of the 5 categories above, it is NOT a sales lead regardless of what product terms appear in the body.\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nNEEDS-INFO vs QUOTE (CRITICAL)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nWHEN IN DOUBT, DO NOT ASSIGN A B-LABEL.\n\nIf unsure whether an email is NEEDS-INFO or QUOTE \u2192 set b_label to null.\nThe email will remain tagged as TAG-SYS/Sales only, for human review.\n\nOnly use NEEDS-INFO if ALL THREE are true:\n1. Product category is completely unclear (can't tell if it's apparel, patches, promo, etc.)\n2. No quantity or even a rough range is mentioned\n3. Customer has not referenced any past order or said \"reorder\" / \"same as last time\"\n\nOnly use QUOTE if you are CONFIDENT:\n- Product type is clearly identifiable\n- Customer gave a quantity (even a range like \"50-100\")\n- You could quote with reasonable assumptions\n- Customer mentioned a previous order or said \"same as last time\"\n\nIf only minor details are missing (sizes, colors, exact date) \u2192 QUOTE\nIf you're unsure \u2192 b_label = null, let human decide\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nMISSING INFO\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nIf B-label = TAG-SYS/Sales/NEEDS-INFO,\nreturn an array of what is missing.\n\nOtherwise return []\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nCONFIDENCE SCORING\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\na_confidence = how certain you are in the A-label choice\nb_confidence = how certain you are in the B-label choice\n\nScale:\n- 0.90\u20131.00 \u2192 very clear, obvious\n- 0.80\u20130.89 \u2192 confident\n- 0.70\u20130.79 \u2192 reasonable but not perfect\n- < 0.70 \u2192 uncertain\n\nWhen unsure between NEEDS-INFO and QUOTE \u2192 set b_label to null (no B-label assigned)\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nOUTPUT FORMAT (STRICT)\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nReturn ONLY this JSON:\n\n{\n  \"skip\": false,\n  \"a_label\": \"TAG-SYS/Sales\",\n  \"a_confidence\": 0.92,\n  \"b_label\": \"TAG-SYS/Sales/QUOTE\",\n  \"b_confidence\": 0.85,\n  \"reason\": \"Short explanation\",\n  \"missing_info\": [],\n  \"next_action\": \"human|draft_email|queue_quote|close_deal|route_cs|none\"\n}\n\n\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nEMAIL INPUT\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\nSubject:\n{{ $json.Subject }}\n\nFrom:\n{{ $json.From }}\n\nTo:\n{{ $json.To }}\n\nBody snippet:\n{{ $json.snippet || \"\" }}\n\nExisting Gmail labels:\n{{ ($json.labels || []).map(l => l.name) }}"
               }
             ]
           },
@@ -3702,7 +3699,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const enriched = $input.first().json || {};\nconst meta = $('Switch').first().json || {};\n\nconst identity = enriched.identity || {};\nconst deals = enriched.deals || [];\nconst dealContext = enriched.deal_context || null;\nconst order = enriched.order || null;\nconst financials = enriched.financials || {};\nconst thread = enriched.thread || {};\n\nlet context = '';\nif (identity.name) context += 'Contact: ' + identity.name;\nif (identity.org_name) context += ' @ ' + identity.org_name;\nif (identity.new_contact) context += ' [NEW - not in Pipedrive]';\ncontext += '\\n';\n\nif (deals.length > 0) {\n  context += '\\nActive Pipedrive deals:\\n';\n  for (const d of deals) {\n    context += '- ' + d.title + ' | Stage: ' + d.stage;\n    if (d.service_type) context += ' | Service: ' + d.service_type;\n    if (d.value) context += ' | Value: $' + d.value;\n    if (d.quantity) context += ' | Qty: ' + d.quantity;\n    if (d.deadline) context += ' | Deadline: ' + d.deadline;\n    if (d.item_of_interest) context += ' | Item: ' + d.item_of_interest;\n    context += '\\n';\n  }\n}\n\nif (dealContext && dealContext.content) {\n  context += '\\n=== DEAL CONTEXT (compiled from all deal notes & transcripts) ===\\n';\n  context += dealContext.content;\n  context += '\\n=== END DEAL CONTEXT ===\\n';\n}\n\nif (order) {\n  context += '\\nMonday order status: ' + (order.human_readable || order.found_on_board || 'unknown') + '\\n';\n}\n\nif (financials.outstanding_balance > 0) {\n  context += '\\nOutstanding balance: $' + financials.outstanding_balance;\n  if (financials.open_invoices?.length > 0) {\n    context += ' | Open invoices: ' + financials.open_invoices.map(inv => '#' + (inv.doc_number || '?') + ' ($' + inv.amount + ')').join(', ');\n  }\n  context += '\\n';\n}\n\nif (thread.summary) {\n  context += '\\nThread summary (' + (thread.message_count || '?') + ' messages):\\n' + thread.summary + '\\n';\n}\n\nconst systemPrompt = 'You are a sales email sub-classifier for Dads Printing (custom apparel). You have FULL deal context from Pipedrive including compiled deal notes and call transcripts, Monday order status, QuickBooks financials, and the email thread summary.\\n\\nClassify into exactly ONE B-label. Respond ONLY with valid JSON, no markdown.\\n\\nOPTIONS:\\n- TAG-SYS/Sales/QUOTE: Customer gave enough to actually BUILD a quote. This means product type is clear AND quantity/range is known AND at least one of: artwork status known, print method identifiable, or enough spec detail that Adam could price it. Just knowing \"60 t-shirts\" is NOT enough for QUOTE \u2014 we also need to know about artwork, colors, print locations, or have prior context that fills those gaps.\\n- TAG-SYS/Sales/NEEDS-INFO: Not enough to quote. Product type unclear, OR no quantity, OR critical spec details missing (no artwork info, no print method clues, no colors/locations mentioned anywhere in deal context or thread).\\n- TAG-SYS/Sales/INVOICE: Deal at Quote Sent or Won stage, customer is approving/ready to pay.\\n- TAG-SYS/Sales/LOST: Customer explicitly declined or went elsewhere.\\n- null: Uncertain. General sales correspondence.\\n\\nRULES:\\n- QUOTE requires QUOTABLE detail, not just product + quantity. Ask: could Adam actually build a price from this? If key specs are missing (artwork, colors, locations, print method) AND deal context does not fill those gaps = NEEDS-INFO.\\n- If DEAL CONTEXT contains product + quantity + artwork/specs from prior conversations = QUOTE\\n- If thread summary + deal context together provide enough detail to price = QUOTE\\n- Customer says reorder/same as last time = QUOTE (prior specs exist)\\n- Brand new inquiry with just product + quantity but zero spec detail = NEEDS-INFO\\n- Deal at Quote Sent + approval language = INVOICE\\n- When in doubt between QUOTE and NEEDS-INFO = NEEDS-INFO (safer to ask than to delay)\\n- null only for general correspondence that is neither quotable nor missing info\\n\\nFORMAT: {\"b_label\": \"TAG-SYS/Sales/QUOTE\", \"b_confidence\": 0.92, \"reason\": \"short explanation\"}';\n\nconst userPrompt = 'DEAL CONTEXT:\\n' + context + '\\nEMAIL:\\nSubject: ' + (meta.subject || '') + '\\nFrom: ' + (meta.senderEmail || '') + '\\nSnippet: ' + (meta.snippet || '') + '\\n\\nClassify now.';\n\nconst requestBody = {\n  model: 'claude-haiku-4-5-20251001',\n  max_tokens: 150,\n  system: systemPrompt,\n  messages: [{ role: 'user', content: userPrompt }]\n};\n\nreturn [{ json: { ...meta, _enriched: enriched, _blabel_request: requestBody } }];"
+          "jsCode": "const enriched = $input.first().json || {};\nconst meta = $('Switch').first().json || {};\n\nconst identity = enriched.identity || {};\nconst deals = enriched.deals || [];\nconst dealContext = enriched.deal_context || null;\nconst order = enriched.order || null;\nconst financials = enriched.financials || {};\nconst thread = enriched.thread || {};\n\nlet context = '';\nif (identity.name) context += 'Contact: ' + identity.name;\nif (identity.org_name) context += ' @ ' + identity.org_name;\nif (identity.new_contact) context += ' [NEW - not in Pipedrive]';\ncontext += '\\n';\n\nif (deals.length > 0) {\n  context += '\\nActive Pipedrive deals:\\n';\n  for (const d of deals) {\n    context += '- ' + d.title + ' | Stage: ' + d.stage;\n    if (d.service_type) context += ' | Service: ' + d.service_type;\n    if (d.value) context += ' | Value: $' + d.value;\n    if (d.quantity) context += ' | Qty: ' + d.quantity;\n    if (d.deadline) context += ' | Deadline: ' + d.deadline;\n    if (d.item_of_interest) context += ' | Item: ' + d.item_of_interest;\n    context += '\\n';\n  }\n}\n\nif (dealContext && dealContext.content) {\n  context += '\\n=== DEAL CONTEXT (compiled from all deal notes & transcripts) ===\\n';\n  context += dealContext.content;\n  context += '\\n=== END DEAL CONTEXT ===\\n';\n}\n\nif (order) {\n  context += '\\nMonday order status: ' + (order.human_readable || order.found_on_board || 'unknown') + '\\n';\n}\n\nif (financials.outstanding_balance > 0) {\n  context += '\\nOutstanding balance: $' + financials.outstanding_balance;\n  if (financials.open_invoices?.length > 0) {\n    context += ' | Open invoices: ' + financials.open_invoices.map(inv => '#' + (inv.doc_number || '?') + ' ($' + inv.amount + ')').join(', ');\n  }\n  context += '\\n';\n}\n\nif (thread.summary) {\n  context += '\\nThread summary (' + (thread.message_count || '?') + ' messages):\\n' + thread.summary + '\\n';\n}\n\nconst systemPrompt = 'You are a sales email sub-classifier for Dads Printing (custom apparel). You have FULL deal context from Pipedrive including compiled deal notes and call transcripts, Monday order status, QuickBooks financials, and the email thread summary.\\n\\nClassify into exactly ONE B-label. Respond ONLY with valid JSON, no markdown.\\n\\nOPTIONS:\\n- TAG-SYS/Sales/QUOTE: Customer gave enough to actually BUILD a quote. ALL THREE must be present (from the email, thread, OR deal context combined):\\n  1. Product type is clear (e.g. t-shirts, hoodies, jerseys, patches)\\n  2. Quantity or range is known (e.g. 50, 15-20, ~100)\\n  3. Print/decoration configuration is known \u2014 at least ONE of: artwork file attached or referenced, print method specified (screenprint, DTG, embroidery, sublimation), number of colors/print locations mentioned, or prior deal context contains these specs\\n\\n  If #3 is missing \u2014 even if product + quantity are clear \u2014 this is NEEDS-INFO, not QUOTE.\\n  Example: \"15-20 red shirts women\\'s neck\" = NEEDS-INFO (no artwork, no print method, no color count for print)\\n  Example: \"50 black tees, 1-color front print, logo attached\" = QUOTE\\n  Example: \"same order as last time, 60 hoodies\" = QUOTE (prior specs exist)\\n\\n- TAG-SYS/Sales/NEEDS-INFO: Not enough to quote. Product type unclear, OR no quantity, OR print/decoration configuration unknown (no artwork info, no print method, no color/location details anywhere in email + deal context + thread).\\n- TAG-SYS/Sales/INVOICE: Deal at Quote Sent or Won stage, customer is approving/ready to pay.\\n- TAG-SYS/Sales/LOST: Customer explicitly declined or went elsewhere.\\n- null: Uncertain. General sales correspondence.\\n\\nCRITICAL RULES:\\n- QUOTE requires ALL THREE: product + quantity + print configuration. Missing ANY ONE = NEEDS-INFO.\\n- \"Product + quantity only\" with NO artwork/print details = NEEDS-INFO. This is the most common misclassification \u2014 do NOT mark as QUOTE.\\n- Garment color (e.g. \"red shirts\") is NOT the same as print configuration. Garment color tells us the blank, not the decoration.\\n- If DEAL CONTEXT contains product + quantity + artwork/specs from prior conversations = QUOTE\\n- If thread summary + deal context together provide enough detail to price = QUOTE\\n- Customer says reorder/same as last time = QUOTE (prior specs exist)\\n- Brand new inquiry with just product + quantity but zero print/artwork detail = NEEDS-INFO\\n- Deal at Quote Sent + approval language = INVOICE\\n- When in doubt between QUOTE and NEEDS-INFO = NEEDS-INFO (safer to ask than to delay)\\n- null only for general correspondence that is neither quotable nor missing info\\n\\nFORMAT: {\"b_label\": \"TAG-SYS/Sales/QUOTE\", \"b_confidence\": 0.92, \"reason\": \"short explanation\"}';\n\nconst userPrompt = 'DEAL CONTEXT:\\n' + context + '\\nEMAIL:\\nSubject: ' + (meta.subject || '') + '\\nFrom: ' + (meta.senderEmail || '') + '\\nSnippet: ' + (meta.snippet || '') + '\\n\\nClassify now.';\n\nconst requestBody = {\n  model: 'claude-haiku-4-5-20251001',\n  max_tokens: 150,\n  system: systemPrompt,\n  messages: [{ role: 'user', content: userPrompt }]\n};\n\nreturn [{ json: { ...meta, _enriched: enriched, _blabel_request: requestBody } }];"
         },
         "id": "build_blabel_prompt",
         "name": "Build Enriched B-Label Prompt",
@@ -3757,7 +3754,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const aiResp = $input.first().json;\nconst prev = $('Build Enriched B-Label Prompt').first().json;\nconst B_LABEL_MIN = 0.75;\n\nlet b_label = null;\nlet b_confidence = 0;\nlet reason = 'enrichment_failed';\n\ntry {\n  const text = (aiResp.content || []).filter(c => c.type === 'text').map(c => c.text).join('');\n  const clean = text.replace(/```json|```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  \n  if (parsed.b_label && parsed.b_label !== 'null') {\n    b_confidence = parsed.b_confidence || 0;\n    reason = parsed.reason || '';\n    \n    if (b_confidence >= B_LABEL_MIN && String(parsed.b_label).startsWith('TAG-SYS/Sales/')) {\n      b_label = parsed.b_label;\n    }\n  }\n} catch(e) {\n  reason = 'parse_error: ' + e.message;\n}\n\nconst { _enriched, _blabel_request, ...itemData } = prev;\nreturn [{ json: {\n  ...itemData,\n  b_label: b_label,\n  b_confidence: b_confidence,\n  _enriched_reason: reason\n} }];"
+          "jsCode": "const aiResp = $input.first().json;\nconst prev = $('Build Enriched B-Label Prompt').first().json;\nconst B_LABEL_MIN = 0.75;\n\nlet b_label = null;\nlet b_confidence = 0;\nlet reason = 'enrichment_failed';\nlet next_action = null;\n\ntry {\n  const text = (aiResp.content || []).filter(c => c.type === 'text').map(c => c.text).join('');\n  const clean = text.replace(/```json|```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  \n  next_action = parsed.next_action || null;\n  \n  if (parsed.b_label && parsed.b_label !== 'null') {\n    b_confidence = parsed.b_confidence || 0;\n    reason = parsed.reason || '';\n    \n    if (b_confidence >= B_LABEL_MIN && String(parsed.b_label).startsWith('TAG-SYS/Sales/')) {\n      b_label = parsed.b_label;\n    }\n  }\n} catch(e) {\n  reason = 'parse_error: ' + e.message;\n}\n\nconst { _enriched, _blabel_request, ...itemData } = prev;\nreturn [{ json: {\n  ...itemData,\n  b_label: b_label,\n  b_confidence: b_confidence,\n  _enriched_reason: reason,\n  _enriched_next_action: next_action\n} }];"
         },
         "id": "parse_blabel",
         "name": "Apply Enriched B-Label",
@@ -3893,6 +3890,177 @@
         "parameters": {
           "jsCode": "// Phase 1: Hard skip form submissions \u2014 forms are intake-only, never reply\nconst subject = ($json.Subject || '').toLowerCase();\nconst from = ($json.From || '').toLowerCase();\n\n// Form submission emails from Elementor/WP contact forms\nif (subject.includes('form submission') && from.includes('info@dadsprinting.com')) {\n  return []; // Empty = workflow stops here, no downstream execution\n}\n\n// \"New message\" or \"New Form\" notifications from the website\nif ((subject.includes('new message - dads printing') || subject.includes('new form')) \n    && (from.includes('info@dadsprinting.com') || from.includes('noreply') || from.includes('wordpress'))) {\n  return []; // Hard skip\n}\n\n// Not a form \u2014 pass through unchanged\nreturn [$input.first()];"
         }
+      },
+      {
+        "id": "draft_cooldown_check",
+        "name": "Draft Cooldown Check",
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          5024,
+          -392
+        ],
+        "parameters": {
+          "operation": "read",
+          "documentId": {
+            "__rl": true,
+            "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+            "mode": "list",
+            "cachedResultName": "AI TRIAGE AUDIT"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1"
+          },
+          "filtersUI": {
+            "values": [
+              {
+                "lookupColumn": "thread_id",
+                "lookupValue": "={{ $json.threadId }}"
+              }
+            ]
+          },
+          "options": {
+            "returnAllMatches": true
+          }
+        },
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "odQ7zf27bjmUdApL",
+            "name": "Google Sheets account 3 - Active"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "suppression_gate",
+        "name": "Suppression Gate",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5200,
+          -392
+        ],
+        "parameters": {
+          "jsCode": "// ===== SUPPRESSION GATE =====\nconst item = $('Apply Enriched B-Label').first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst firstDeal = deals[0] || {};\nconst dealContext = enriched.deal_context || {};\nconst order = enriched.order || {};\nconst next_action = item._enriched_next_action || null;\n\nconst cooldownRows = $input.all().map(i => i.json);\nlet draft_cooldown = false;\nlet last_draft_source = null;\nlet last_draft_age_min = null;\nconst now = new Date();\nconst COOLDOWN_MINUTES = 60;\n\nfor (const row of cooldownRows) {\n  if (!row.timestamp || !row.b_label) continue;\n  const rowTime = new Date(row.timestamp);\n  if (isNaN(rowTime.getTime())) continue;\n  const ageMin = Math.round((now - rowTime) / 60000);\n  if (ageMin <= COOLDOWN_MINUTES && row.b_label && row.b_label !== 'null') {\n    draft_cooldown = true;\n    last_draft_source = row.b_label;\n    last_draft_age_min = ageMin;\n    break;\n  }\n}\n\nlet draft_allowed = true;\nlet suppress_reason = '';\n\nif (draft_cooldown) {\n  draft_allowed = false;\n  suppress_reason = 'Draft cooldown: ' + last_draft_source + ' drafted ' + last_draft_age_min + 'min ago';\n}\n\nif (draft_allowed && dealContext.di_note_complete && firstDeal.stage_id >= 15) {\n  draft_allowed = false;\n  suppress_reason = 'DQM owns this deal (Stage ' + firstDeal.stage_id + ' + DI complete)';\n}\n\nif (draft_allowed && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'Active order on ' + (order.active_board || 'Monday');\n}\n\nif (draft_allowed && firstDeal.stage_id === 16) {\n  draft_allowed = false;\n  suppress_reason = 'Deal already at Invoice Paid';\n}\n\nif (draft_allowed && next_action === 'queue_quote' && firstDeal.stage_id >= 8 && dealContext.di_note_complete) {\n  draft_allowed = false;\n  suppress_reason = 'queue_quote suppressed - DQM pipeline active';\n}\n\nconst lifecycle = enriched.lifecycle_stage || null;\nif (draft_allowed && lifecycle === 'in_production' && order.active_order) {\n  draft_allowed = false;\n  suppress_reason = 'In production lifecycle with active Monday order';\n}\nif (draft_allowed && lifecycle === 'delivered') {\n  draft_allowed = false;\n  suppress_reason = 'Thread lifecycle: delivered';\n}\n\nif (!draft_allowed) {\n  return [{ json: { ...item, b_label: null, draft_allowed, suppress_reason, draft_cooldown, last_draft_source, last_draft_age_min } }];\n}\n\nreturn [{ json: { ...item, draft_allowed: true, suppress_reason: '', draft_cooldown: false, last_draft_source: null, last_draft_age_min: null } }];"
+        }
+      },
+      {
+        "id": "wc_promo_suppress",
+        "name": "WC PROMO Suppress Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          5100,
+          -520
+        ],
+        "parameters": {
+          "jsCode": "const item = $input.first().json;\nconst enriched = $('Enrich Sales Context').first().json || {};\nconst deals = enriched.deals || [];\nconst identity = enriched.identity || {};\n\nif (deals.length > 0 && identity.email) {\n  return [{ json: {\n    ...item,\n    _wc_suppress_email: identity.email,\n    _wc_suppress_name: identity.name || '',\n    _wc_suppress_deal: deals[0].title || '',\n    _wc_suppress_reason: 'Active deal: ' + (deals[0].title || 'unknown'),\n    _wc_suppress_timestamp: new Date().toISOString()\n  }}];\n}\n\nreturn [{ json: item }];"
+        }
+      },
+      {
+        "id": "wc_promo_sheet",
+        "name": "Write WC PROMO Suppression",
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          5280,
+          -520
+        ],
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+            "mode": "list",
+            "cachedResultName": "AI TRIAGE AUDIT"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "WC_PROMO_SUPPRESS",
+            "mode": "name"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "email": "={{ $json._wc_suppress_email }}",
+              "name": "={{ $json._wc_suppress_name }}",
+              "deal_title": "={{ $json._wc_suppress_deal }}",
+              "reason": "={{ $json._wc_suppress_reason }}",
+              "added_at": "={{ $json._wc_suppress_timestamp }}",
+              "expires_at": "={{ new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "email",
+                "displayName": "email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "name",
+                "displayName": "name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "deal_title",
+                "displayName": "deal_title",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "reason",
+                "displayName": "reason",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "added_at",
+                "displayName": "added_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "expires_at",
+                "displayName": "expires_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "odQ7zf27bjmUdApL",
+            "name": "Google Sheets account 3 - Active"
+          }
+        },
+        "onError": "continueRegularOutput"
       }
     ],
     "connections": {
@@ -4195,17 +4363,6 @@
           ]
         ]
       },
-      "Apply Enriched B-Label": {
-        "main": [
-          [
-            {
-              "node": "If Has B Label - Sales",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
       "If Has B Label - Sales": {
         "main": [
           [
@@ -4281,6 +4438,55 @@
             }
           ]
         ]
+      },
+      "Apply Enriched B-Label": {
+        "main": [
+          [
+            {
+              "node": "Draft Cooldown Check",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "WC PROMO Suppress Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Draft Cooldown Check": {
+        "main": [
+          [
+            {
+              "node": "Suppression Gate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Suppression Gate": {
+        "main": [
+          [
+            {
+              "node": "If Has B Label - Sales",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "WC PROMO Suppress Check": {
+        "main": [
+          [
+            {
+              "node": "Write WC PROMO Suppression",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "authors": "Adam Lando",
@@ -4289,10 +4495,10 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-03-25T08:47:07.016Z",
-        "id": 1497,
+        "createdAt": "2026-03-25T19:12:44.022Z",
+        "id": 1521,
         "workflowId": "FtmyhXLDvo21tqm4",
-        "versionId": "7b235803-ebff-4d12-a37d-7c3c02a5285e",
+        "versionId": "8cad62c6-33f6-49f5-818c-b1dcf5e9d5c0",
         "event": "activated",
         "userId": "8b08385f-879c-46dc-9695-c5472ba48f1a"
       }
