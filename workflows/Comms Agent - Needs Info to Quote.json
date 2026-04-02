@@ -338,7 +338,7 @@
         "messages": {
           "values": [
             {
-              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom patches to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 reply questions, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Patches:\n\n1. What are the dimensions of the patch (LxW Inches)\n2. Is the design a Circle, Square, Rectangle or something that would be cut to shape?\n3. Quantity of patches required\n4. Type of Backing (Sew On, Iron On, Velcro, Stick on)\n5. Raised Edge or Not?\n\nDrafting Rules\n\n1. Begin by introducing myself (Hi (client name), Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "content": "You are an assistant for Dad's Printing. Analyze a client\u2019s email inquiring about our custom patches to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 reply questions, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Patches:\n\n1. What are the dimensions of the patch (LxW Inches)\n2. Is the design a Circle, Square, Rectangle or something that would be cut to shape?\n3. Quantity of patches required\n4. Type of Backing (Sew On, Iron On, Velcro, Stick on)\n5. Raised Edge or Not?\n\nDrafting Rules\n\n1. Begin by introducing myself (Hi (client name), Adam from Dad\u2019s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we\u2019ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
               "role": "system"
             },
             {
@@ -378,7 +378,7 @@
         "messages": {
           "values": [
             {
-              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom branded promo product to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Promo Products:\n\n1. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n2. Quantity of units required\n3. Are you looking for any certain materials to be used in the product or certain specs?\n4. Is there a per unit price you are trying to keep it under? \n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "content": "You are an assistant for Dad's Printing. Analyze a client\u2019s email inquiring about our custom branded promo product to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Promo Products:\n\n1. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n2. Quantity of units required\n3. Are you looking for any certain materials to be used in the product or certain specs?\n4. Is there a per unit price you are trying to keep it under? \n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad\u2019s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we\u2019ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
               "role": "system"
             },
             {
@@ -418,7 +418,7 @@
         "messages": {
           "values": [
             {
-              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom embroidered apparel to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nEmbroidered Apparel:\n\n1. What type of items are we embroidering? Feel free to be as specific as you wish. \n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n3. Quantity of units required\n4. How big do you want your logo to be on the item?\n5. Are you looking for Economic, Midrange or Highend Apparel options?\n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "content": "You are an assistant for Dad's Printing. Analyze a client\u2019s email inquiring about our custom embroidered apparel to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nEmbroidered Apparel:\n\n1. What type of items are we embroidering? Feel free to be as specific as you wish. \n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n3. Quantity of units required\n4. How big do you want your logo to be on the item?\n5. Are you looking for Economic, Midrange or Highend Apparel options?\n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad\u2019s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we\u2019ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
               "role": "system"
             },
             {
@@ -458,7 +458,7 @@
         "messages": {
           "values": [
             {
-              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom printed apparel to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nPrinted Apparel:\n\n1. What type of items are we printing? Feel free to be as specific as you wish. \n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo? If they have attached or there appears to be a url that looks like it leads to a file. If there is a file, combine this with question 4. \n3. Quantity of units required (ask for a range ideally)\n4. How big do you want your logo to be on the item?\n5. Are you looking for Economic, Midrange or Highend Apparel options?\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "content": "You are an assistant for Dad's Printing. Analyze a client\u2019s email inquiring about our custom printed apparel to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nPrinted Apparel:\n\n1. What type of items are we printing? Feel free to be as specific as you wish. \n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo? If they have attached or there appears to be a url that looks like it leads to a file. If there is a file, combine this with question 4. \n3. Quantity of units required (ask for a range ideally)\n4. How big do you want your logo to be on the item?\n5. Are you looking for Economic, Midrange or Highend Apparel options?\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad\u2019s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we\u2019ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
               "role": "system"
             },
             {
@@ -498,7 +498,7 @@
         "messages": {
           "values": [
             {
-              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom sports jerseys to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Jerseys:\n\n1. Are you looking for printed jerseys or ones with stitched logo’s?\n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n3. How many jerseys?\n4. Are you looking for a certain color or style of jersey? Feel free to explain in as much detail as you wish.\n5. Do you want names and numbers on the back?\n6. Are there any additional logo’s going on the jerseys for sponsors?\n7. Are there any other items you are looking to pair with the Jerseys?\n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "content": "You are an assistant for Dad's Printing. Analyze a client\u2019s email inquiring about our custom sports jerseys to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Jerseys:\n\n1. Are you looking for printed jerseys or ones with stitched logo\u2019s?\n2. Do you have the logo we are printing onto the item, or at least the number of colors in your logo?\n3. How many jerseys?\n4. Are you looking for a certain color or style of jersey? Feel free to explain in as much detail as you wish.\n5. Do you want names and numbers on the back?\n6. Are there any additional logo\u2019s going on the jerseys for sponsors?\n7. Are there any other items you are looking to pair with the Jerseys?\n\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad\u2019s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we\u2019ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
               "role": "system"
             },
             {
@@ -731,7 +731,7 @@
         "messages": {
           "values": [
             {
-              "content": "You are an assistant for Dad's Printing. Analyze a client’s email inquiring about our custom patches to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Socks:\n\n1. How many pairs of socks are you looking for? \n2. What are we putting on the socks? A simple logo placement or a pattern?\n3. Do you have a certain material in mind?\n4. Are you looking for a crew length, knee high, 3/4 or Ankle Sock?\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad’s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we’ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
+              "content": "You are an assistant for Dad's Printing. Analyze a client\u2019s email inquiring about our custom patches to find the main missing info needed for a quote depending on the product, then draft a friendly follow-up email requesting those details. Please limmit your response to 3 bullet points when possible, keeping the email short and not overwhelming the client. Focus on the most important information needed.\n\nOutput only the email (no signature, no extra text). End after the final sentence with no closing phrase.\n\nCustom Socks:\n\n1. How many pairs of socks are you looking for? \n2. What are we putting on the socks? A simple logo placement or a pattern?\n3. Do you have a certain material in mind?\n4. Are you looking for a crew length, knee high, 3/4 or Ankle Sock?\n\nDrafting Rules\n\n1. Begin by introducing myself (Adam from Dad\u2019s Printing here,), thanking them and confirming we can help.\n2. Request only missing details in a numbered list. \n3. Do not repeat info already provided. Request just what's needed.\n4. Close with: Send us what you can, and we\u2019ll prepare the quote right away.\n5. Greeting: Hi [Client Name] if known, otherwise Hello there.\n6. Make sure the questions you ask them are complete sentences, not long ones but proper sentences.\n7. Please space the intro portion from the questions and make sure each question is on it's own line with it's number. Also do a line space between intro and a line space after questions before conclusion. Please apply HTML as this is going into a gmail.",
               "role": "system"
             },
             {
@@ -797,7 +797,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// n8n Code node (JavaScript)\n// Builds a \"clean_thread_text\" from the Gmail thread while removing inline images/base64,\n// stripping HTML, trimming signatures/quoted history, and applying a head+tail truncation.\n\nfunction htmlToText(html) {\n  if (!html) return \"\";\n  let s = String(html);\n\n  // Remove head/script/style blocks\n  s = s.replace(/<head[\\s\\S]*?<\\/head>/gi, \" \");\n  s = s.replace(/<script[\\s\\S]*?<\\/script>/gi, \" \");\n  s = s.replace(/<style[\\s\\S]*?<\\/style>/gi, \" \");\n\n  // Kill inline base64 images & img tags\n  s = s.replace(/data:image\\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=\\s]+/g, \"[inline-image-removed]\");\n  s = s.replace(/<img\\b[^>]*>/gi, \"[image-removed]\");\n  s = s.replace(/cid:[^\\s'\"]+/gi, \"[cid-image-removed]\");\n\n  // Basic block to newline\n  s = s.replace(/<br\\s*\\/?>/gi, \"\\n\");\n  s = s.replace(/<\\/p>/gi, \"\\n\");\n  s = s.replace(/<\\/div>/gi, \"\\n\");\n  s = s.replace(/<\\/li>/gi, \"\\n\");\n  s = s.replace(/<\\/tr>/gi, \"\\n\");\n  s = s.replace(/<\\/td>/gi, \"  \");\n\n  // Strip remaining tags\n  s = s.replace(/<[^>]+>/g, \" \");\n\n  // Decode a few common entities (not perfect, but good enough)\n  s = s.replace(/&nbsp;/g, \" \");\n  s = s.replace(/&amp;/g, \"&\");\n  s = s.replace(/&lt;/g, \"<\");\n  s = s.replace(/&gt;/g, \">\");\n  s = s.replace(/&quot;/g, '\"');\n  s = s.replace(/&#39;/g, \"'\");\n\n  // Collapse whitespace\n  s = s.replace(/[ \\t]+\\n/g, \"\\n\");\n  s = s.replace(/\\n{3,}/g, \"\\n\\n\");\n  s = s.replace(/[ \\t]{2,}/g, \" \");\n  return s.trim();\n}\n\nfunction stripQuotedAndSignatures(text) {\n  if (!text) return \"\";\n  let t = String(text);\n\n  // Remove common quoted-reply blocks (keep top part)\n  const cutMarkers = [\n    /^On .* wrote:$/m,\n    /^From:\\s.*$/m,\n    /^Sent:\\s.*$/m,\n    /^To:\\s.*$/m,\n    /^Subject:\\s.*$/m,\n    /^-----Original Message-----$/m,\n    /^_{5,}\\s*$/m\n  ];\n\n  for (const re of cutMarkers) {\n    const m = t.match(re);\n    if (m && m.index != null && m.index > 200) { // only cut if it's not right at the top\n      t = t.slice(0, m.index).trim();\n      break;\n    }\n  }\n\n  // Light signature trimming (don’t be too aggressive)\n  const sigMarkers = [\n    /\\n--\\s*\\n/,                 // standard signature delimiter\n    /\\nSent from my iPhone/i,\n    /\\nSent from my Android/i\n  ];\n  for (const re of sigMarkers) {\n    const idx = t.search(re);\n    if (idx > 200) { // avoid nuking short messages\n      t = t.slice(0, idx).trim();\n      break;\n    }\n  }\n\n  return t.trim();\n}\n\nfunction getMessageHeader(msg) {\n  // Defensive: different Gmail node outputs differ\n  const from =\n    msg?.from?.value?.[0]?.address ||\n    msg?.headers?.from ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"from\")?.value ||\n    \"\";\n\n  const date =\n    msg?.date ||\n    msg?.headers?.date ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"date\")?.value ||\n    \"\";\n\n  const subject =\n    msg?.subject ||\n    msg?.headers?.subject ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"subject\")?.value ||\n    \"\";\n\n  return { from, date, subject };\n}\n\nfunction extractBestBody(msg) {\n  // Try common n8n gmail fields first\n  const plain = msg?.textPlain || msg?.text || msg?.body?.text;\n  const html = msg?.textHtml || msg?.html || msg?.body?.html;\n\n  let body = \"\";\n  if (plain) body = String(plain);\n  else if (html) body = htmlToText(html);\n  else if (msg?.snippet) body = String(msg.snippet);\n  else body = \"\";\n\n  body = stripQuotedAndSignatures(body);\n  return body;\n}\n\nfunction headTailTruncate(text, maxChars = 35000, headChars = 12000) {\n  const t = String(text || \"\");\n  if (t.length <= maxChars) return { text: t, truncated: false };\n\n  const tailChars = Math.max(0, maxChars - headChars);\n  const head = t.slice(0, headChars);\n  const tail = t.slice(Math.max(0, t.length - tailChars));\n  const out = `${head}\\n\\n[[TRUNCATED MIDDLE FOR LENGTH]]\\n\\n${tail}`;\n  return { text: out, truncated: true };\n}\n\n// Pull the thread from the earlier Gmail node by reference.\n// This avoids losing the thread content after Pipedrive nodes mutate $json.\nconst thread = $node[\"Get a thread\"]?.json;\nconst threadId = thread?.id || $json?.threadId || $node[\"Get a message\"]?.json?.threadId || \"\";\n\n// Gmail thread payload usually has thread.messages[]\nconst msgs = Array.isArray(thread?.messages) ? thread.messages : [];\n// Sort oldest -> newest if internalDate exists\nmsgs.sort((a, b) => Number(a?.internalDate || 0) - Number(b?.internalDate || 0));\n\nlet parts = [];\nfor (const m of msgs) {\n  const { from, date, subject } = getMessageHeader(m);\n  const body = extractBestBody(m);\n  if (!body) continue;\n\n  parts.push(\n`From: ${from}\nDate: ${date}\nSubject: ${subject}\n\n${body}`\n  );\n}\n\nlet combined = parts.join(\"\\n\\n---\\n\\n\").trim();\n\n// Final safety: if thread parsing fails, fall back to the single message\nif (!combined) {\n  const single = $node[\"Get a message\"]?.json || {};\n  const { from, date, subject } = getMessageHeader(single);\n  const body = extractBestBody(single);\n  combined =\n`From: ${from}\nDate: ${date}\nSubject: ${subject}\n\n${body}`.trim();\n}\n\n// Apply truncation\nconst { text: clean_thread_text, truncated } = headTailTruncate(combined, 35000, 12000);\n\nreturn [{\n  json: {\n    ...$json,\n    threadId,\n    clean_thread_text,\n    clean_thread_chars: clean_thread_text.length,\n    clean_thread_truncated: truncated\n  }\n}];\n"
+        "jsCode": "// n8n Code node (JavaScript)\n// Builds a \"clean_thread_text\" from the Gmail thread while removing inline images/base64,\n// stripping HTML, trimming signatures/quoted history, and applying a head+tail truncation.\n\nfunction htmlToText(html) {\n  if (!html) return \"\";\n  let s = String(html);\n\n  // Remove head/script/style blocks\n  s = s.replace(/<head[\\s\\S]*?<\\/head>/gi, \" \");\n  s = s.replace(/<script[\\s\\S]*?<\\/script>/gi, \" \");\n  s = s.replace(/<style[\\s\\S]*?<\\/style>/gi, \" \");\n\n  // Kill inline base64 images & img tags\n  s = s.replace(/data:image\\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=\\s]+/g, \"[inline-image-removed]\");\n  s = s.replace(/<img\\b[^>]*>/gi, \"[image-removed]\");\n  s = s.replace(/cid:[^\\s'\"]+/gi, \"[cid-image-removed]\");\n\n  // Basic block to newline\n  s = s.replace(/<br\\s*\\/?>/gi, \"\\n\");\n  s = s.replace(/<\\/p>/gi, \"\\n\");\n  s = s.replace(/<\\/div>/gi, \"\\n\");\n  s = s.replace(/<\\/li>/gi, \"\\n\");\n  s = s.replace(/<\\/tr>/gi, \"\\n\");\n  s = s.replace(/<\\/td>/gi, \"  \");\n\n  // Strip remaining tags\n  s = s.replace(/<[^>]+>/g, \" \");\n\n  // Decode a few common entities (not perfect, but good enough)\n  s = s.replace(/&nbsp;/g, \" \");\n  s = s.replace(/&amp;/g, \"&\");\n  s = s.replace(/&lt;/g, \"<\");\n  s = s.replace(/&gt;/g, \">\");\n  s = s.replace(/&quot;/g, '\"');\n  s = s.replace(/&#39;/g, \"'\");\n\n  // Collapse whitespace\n  s = s.replace(/[ \\t]+\\n/g, \"\\n\");\n  s = s.replace(/\\n{3,}/g, \"\\n\\n\");\n  s = s.replace(/[ \\t]{2,}/g, \" \");\n  return s.trim();\n}\n\nfunction stripQuotedAndSignatures(text) {\n  if (!text) return \"\";\n  let t = String(text);\n\n  // Remove common quoted-reply blocks (keep top part)\n  const cutMarkers = [\n    /^On .* wrote:$/m,\n    /^From:\\s.*$/m,\n    /^Sent:\\s.*$/m,\n    /^To:\\s.*$/m,\n    /^Subject:\\s.*$/m,\n    /^-----Original Message-----$/m,\n    /^_{5,}\\s*$/m\n  ];\n\n  for (const re of cutMarkers) {\n    const m = t.match(re);\n    if (m && m.index != null && m.index > 200) { // only cut if it's not right at the top\n      t = t.slice(0, m.index).trim();\n      break;\n    }\n  }\n\n  // Light signature trimming (don\u2019t be too aggressive)\n  const sigMarkers = [\n    /\\n--\\s*\\n/,                 // standard signature delimiter\n    /\\nSent from my iPhone/i,\n    /\\nSent from my Android/i\n  ];\n  for (const re of sigMarkers) {\n    const idx = t.search(re);\n    if (idx > 200) { // avoid nuking short messages\n      t = t.slice(0, idx).trim();\n      break;\n    }\n  }\n\n  return t.trim();\n}\n\nfunction getMessageHeader(msg) {\n  // Defensive: different Gmail node outputs differ\n  const from =\n    msg?.from?.value?.[0]?.address ||\n    msg?.headers?.from ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"from\")?.value ||\n    \"\";\n\n  const date =\n    msg?.date ||\n    msg?.headers?.date ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"date\")?.value ||\n    \"\";\n\n  const subject =\n    msg?.subject ||\n    msg?.headers?.subject ||\n    msg?.payload?.headers?.find?.(h => h.name?.toLowerCase() === \"subject\")?.value ||\n    \"\";\n\n  return { from, date, subject };\n}\n\nfunction extractBestBody(msg) {\n  // Try common n8n gmail fields first\n  const plain = msg?.textPlain || msg?.text || msg?.body?.text;\n  const html = msg?.textHtml || msg?.html || msg?.body?.html;\n\n  let body = \"\";\n  if (plain) body = String(plain);\n  else if (html) body = htmlToText(html);\n  else if (msg?.snippet) body = String(msg.snippet);\n  else body = \"\";\n\n  body = stripQuotedAndSignatures(body);\n  return body;\n}\n\nfunction headTailTruncate(text, maxChars = 35000, headChars = 12000) {\n  const t = String(text || \"\");\n  if (t.length <= maxChars) return { text: t, truncated: false };\n\n  const tailChars = Math.max(0, maxChars - headChars);\n  const head = t.slice(0, headChars);\n  const tail = t.slice(Math.max(0, t.length - tailChars));\n  const out = `${head}\\n\\n[[TRUNCATED MIDDLE FOR LENGTH]]\\n\\n${tail}`;\n  return { text: out, truncated: true };\n}\n\n// Pull the thread from the earlier Gmail node by reference.\n// This avoids losing the thread content after Pipedrive nodes mutate $json.\nconst thread = $node[\"Get a thread\"]?.json;\nconst threadId = thread?.id || $json?.threadId || $node[\"Get a message\"]?.json?.threadId || \"\";\n\n// Gmail thread payload usually has thread.messages[]\nconst msgs = Array.isArray(thread?.messages) ? thread.messages : [];\n// Sort oldest -> newest if internalDate exists\nmsgs.sort((a, b) => Number(a?.internalDate || 0) - Number(b?.internalDate || 0));\n\nlet parts = [];\nfor (const m of msgs) {\n  const { from, date, subject } = getMessageHeader(m);\n  const body = extractBestBody(m);\n  if (!body) continue;\n\n  parts.push(\n`From: ${from}\nDate: ${date}\nSubject: ${subject}\n\n${body}`\n  );\n}\n\nlet combined = parts.join(\"\\n\\n---\\n\\n\").trim();\n\n// Final safety: if thread parsing fails, fall back to the single message\nif (!combined) {\n  const single = $node[\"Get a message\"]?.json || {};\n  const { from, date, subject } = getMessageHeader(single);\n  const body = extractBestBody(single);\n  combined =\n`From: ${from}\nDate: ${date}\nSubject: ${subject}\n\n${body}`.trim();\n}\n\n// Apply truncation\nconst { text: clean_thread_text, truncated } = headTailTruncate(combined, 35000, 12000);\n\nreturn [{\n  json: {\n    ...$json,\n    threadId,\n    clean_thread_text,\n    clean_thread_chars: clean_thread_text.length,\n    clean_thread_truncated: truncated\n  }\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1010,6 +1010,100 @@
         "gmailOAuth2": {
           "id": "eeR9kYWgMFeo9vvK",
           "name": "Gmail - info@"
+        }
+      }
+    },
+    {
+      "id": "341f02a1-50d2-4e09-9dd2-67161a0d83ba",
+      "name": "NI Dedup Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        -336
+      ],
+      "parameters": {
+        "jsCode": "// Dedup Gate \u2014 skip threads already processed in last 24h\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.processed) staticData.processed = {};\n\nconst threadId = String($json.threadId || '');\nconst now = Date.now();\nconst TTL = 24 * 60 * 60 * 1000; // 24 hours\n\n// Prune expired entries\nfor (const [key, ts] of Object.entries(staticData.processed)) {\n  if (now - ts > TTL) delete staticData.processed[key];\n}\n\nif (!threadId) {\n  return { json: { ...$json, _dedup: 'no_thread_id', _skip: false } };\n}\n\nif (staticData.processed[threadId]) {\n  return { json: { ...$json, _dedup: 'already_processed', _skip: true } };\n}\n\n// Mark as processed\nstaticData.processed[threadId] = now;\nreturn { json: { ...$json, _dedup: 'new', _skip: false } };\n",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "42b51b99-9e4d-4c23-ad72-b93ffd400b94",
+      "name": "Thread Already Drafted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -440,
+        -336
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ni-dedup-check",
+              "leftValue": "={{ $json._skip }}",
+              "operator": {
+                "operation": "false",
+                "type": "boolean",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          }
+        }
+      }
+    },
+    {
+      "id": "gap-dedup-gate",
+      "name": "Gap Outreach Dedup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        1800
+      ],
+      "parameters": {
+        "jsCode": "// Gap Outreach Dedup \u2014 skip deals already gap-drafted in last 24h\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.gapDrafted) staticData.gapDrafted = {};\n\nconst dealId = String($json.dealId || '');\nconst now = Date.now();\nconst TTL = 24 * 60 * 60 * 1000; // 24 hours\n\n// Prune expired entries\nfor (const [key, ts] of Object.entries(staticData.gapDrafted)) {\n  if (now - ts > TTL) delete staticData.gapDrafted[key];\n}\n\nif (!dealId) {\n  return { json: { ...$json, _gapDedup: 'no_deal_id', _skipGap: false } };\n}\n\nif (staticData.gapDrafted[dealId]) {\n  return { json: { ...$json, _gapDedup: 'already_drafted', _skipGap: true } };\n}\n\n// Mark as drafted\nstaticData.gapDrafted[dealId] = now;\nreturn { json: { ...$json, _gapDedup: 'new', _skipGap: false } };\n",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "gap-already-drafted",
+      "name": "Gap Already Drafted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        1800
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "gap-dedup-check",
+              "leftValue": "={{ $json._skipGap }}",
+              "operator": {
+                "operation": "false",
+                "type": "boolean",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          }
         }
       }
     }
@@ -1334,7 +1428,7 @@
       "main": [
         [
           {
-            "node": "Get a thread",
+            "node": "NI Dedup Gate",
             "type": "main",
             "index": 0
           }
@@ -1401,6 +1495,35 @@
         [
           {
             "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NI Dedup Gate": {
+      "main": [
+        [
+          {
+            "node": "Thread Already Drafted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thread Already Drafted?": {
+      "main": [
+        [
+          {
+            "node": "Get a thread",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
             "type": "main",
             "index": 0
           }
