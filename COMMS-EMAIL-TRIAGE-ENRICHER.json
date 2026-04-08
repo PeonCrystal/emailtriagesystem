@@ -4,7 +4,7 @@
   "id": "keDWe4d1X31uYgLf",
   "name": "EMAIL TRIAGE V2 - CONTEXT-ENRICHER",
   "description": null,
-  "active": true,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -51,7 +51,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const triggerData = $('Execute Workflow Trigger').first().json;\nconst senderEmail = triggerData.sender_email;\nconst searchResult = $input.first().json;\nconst API_TOKEN = '86eda7172621e731a5c482c52306d395ba35e193';\n\nif (!searchResult.data?.items?.length) {\n  return [{ json: {\n    fetch_url: 'https://api.pipedrive.com/v1/persons/0/deals?status=open&api_token=' + API_TOKEN,\n    person_id: null, name: null, org_name: null, org_id: null,\n    email: senderEmail, new_contact: true, source: 'none', is_primary: true\n  }}];\n}\n\nconst persons = searchResult.data.items;\nconst items = [];\nconst seenOrgs = new Set();\n\nfor (let i = 0; i < persons.length; i++) {\n  const p = persons[i].item;\n  items.push({ json: {\n    fetch_url: `https://api.pipedrive.com/v1/persons/${p.id}/deals?status=open&api_token=${API_TOKEN}`,\n    person_id: p.id, name: p.name,\n    org_name: p.organization?.name || null,\n    org_id: p.organization?.id || null,\n    email: p.primary_email || senderEmail,\n    new_contact: false, source: 'person', is_primary: i === 0\n  }});\n  if (p.organization?.id && !seenOrgs.has(p.organization.id)) {\n    seenOrgs.add(p.organization.id);\n    items.push({ json: {\n      fetch_url: `https://api.pipedrive.com/v1/organizations/${p.organization.id}/deals?status=open&api_token=${API_TOKEN}`,\n      person_id: p.id, name: p.name,\n      org_name: p.organization.name || null,\n      org_id: p.organization.id,\n      email: p.primary_email || senderEmail,\n      new_contact: false, source: 'org', is_primary: false\n    }});\n  }\n}\n\nreturn items;"
+        "jsCode": "const triggerData = $('Execute Workflow Trigger').first().json;\nconst senderEmail = triggerData.sender_email;\nconst searchResult = $input.first().json;\nconst API_TOKEN = '86eda7172621e731a5c482c52306d395ba35e193';\n\nif (!searchResult.data?.items?.length) {\n  return [{ json: {\n    fetch_url: 'https://api.pipedrive.com/v1/persons/0/deals?status=open&api_token=' + API_TOKEN,\n    person_id: null, name: null, org_name: null, org_id: null,\n    email: senderEmail, new_contact: true, source: 'none', is_primary: true\n  }}];\n}\n\nconst persons = searchResult.data.items;\n\n// Filter to exact email matches \u2014 Pipedrive search is fuzzy and returns false positives\n// (e.g. \"michael boyd\" fuzzy-matches \"Mikalah Martindale\", pulling wrong deals)\nconst senderLower = senderEmail.toLowerCase();\nconst matched = persons.filter(p => {\n  const pe = (p.item.primary_email || '').toLowerCase();\n  if (pe === senderLower) return true;\n  // Also check secondary emails array if available\n  const emails = p.item.emails || [];\n  return emails.some(e => (e.value || '').toLowerCase() === senderLower);\n});\n\n// If no exact email match, treat as new contact \u2014 don't use fuzzy results\nif (matched.length === 0) {\n  return [{ json: {\n    fetch_url: 'https://api.pipedrive.com/v1/persons/0/deals?status=open&api_token=' + API_TOKEN,\n    person_id: null, name: null, org_name: null, org_id: null,\n    email: senderEmail, new_contact: true, source: 'none', is_primary: true\n  }}];\n}\n\nconst items = [];\nconst seenOrgs = new Set();\n\nfor (let i = 0; i < matched.length; i++) {\n  const p = matched[i].item;\n  items.push({ json: {\n    fetch_url: `https://api.pipedrive.com/v1/persons/${p.id}/deals?status=open&api_token=${API_TOKEN}`,\n    person_id: p.id, name: p.name,\n    org_name: p.organization?.name || null,\n    org_id: p.organization?.id || null,\n    email: p.primary_email || senderEmail,\n    new_contact: false, source: 'person', is_primary: i === 0\n  }});\n  if (p.organization?.id && !seenOrgs.has(p.organization.id)) {\n    seenOrgs.add(p.organization.id);\n    items.push({ json: {\n      fetch_url: `https://api.pipedrive.com/v1/organizations/${p.organization.id}/deals?status=open&api_token=${API_TOKEN}`,\n      person_id: p.id, name: p.name,\n      org_name: p.organization.name || null,\n      org_id: p.organization.id,\n      email: p.primary_email || senderEmail,\n      new_contact: false, source: 'org', is_primary: false\n    }});\n  }\n}\n\nreturn items;"
       },
       "id": "parse_persons",
       "name": "Step 1b - Parse Persons",
@@ -522,8 +522,6 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "c99b4f70-68ac-4fca-b784-1c61cc36679d",
-  "activeVersionId": "c99b4f70-68ac-4fca-b784-1c61cc36679d",
   "versionCounter": 69,
   "triggerCount": 0,
   "shared": [
