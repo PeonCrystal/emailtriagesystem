@@ -1655,7 +1655,8 @@
           "name": "Google Sheets account 3 - Active"
         }
       },
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
