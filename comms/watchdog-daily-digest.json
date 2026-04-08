@@ -1,0 +1,190 @@
+{
+  "id": "BKy1gLVePlFqReao",
+  "name": "WATCHDOG — Daily Triage Digest",
+  "active": false,
+  "nodes": [
+    {
+      "id": "trigger-1",
+      "name": "Daily 6PM PDT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [200, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 1 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "gmail-fetch-1",
+      "name": "Sales Without B-Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [420, 300],
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 100,
+        "filters": {
+          "q": "label:TAG-SYS-Sales -label:TAG-SYS-Sales-QUOTE -label:TAG-SYS-Sales-NEEDS-INFO -label:TAG-SYS-Sales-INVOICE -label:TAG-SYS-Sales-LOST newer_than:1d",
+          "readStatus": "unread",
+          "labelIds": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@dadsprinting.com"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "gmail-fetch-2",
+      "name": "Unsure Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [420, 500],
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 50,
+        "filters": {
+          "q": "label:TAG-SYS-Unsure newer_than:1d"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@dadsprinting.com"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "gmail-fetch-3",
+      "name": "Misclassified Check",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [420, 700],
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 50,
+        "filters": {
+          "q": "label:TAG-SYS-Sales newer_than:1d (from:noreply OR from:notifications OR from:no-reply OR from:payments OR from:receipt OR from:donotreply OR subject:receipt OR subject:payment OR subject:confirmation OR subject:\"your order\")"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@dadsprinting.com"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "sheets-1",
+      "name": "Audit Sheet - Suppressed",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [420, 900],
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "17GPMItFSady8bJVpFZlfIQr1T26g_aMIY_aMDdsCvvA",
+          "mode": "list",
+          "cachedResultName": "AI TRIAGE AUDIT"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "filters": {},
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "odQ7zf27bjmUdApL",
+          "name": "Google Sheets account 3 - Active"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "code-1",
+      "name": "Compile Watchdog Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 500],
+      "parameters": {
+        "jsCode": "// Gather all inputs\nconst salesNoB = $('Sales Without B-Label').all().map(i => i.json);\nconst unsure = $('Unsure Labels').all().map(i => i.json);\nconst misclass = $('Misclassified Check').all().map(i => i.json);\nconst auditRows = $('Audit Sheet - Suppressed').all().map(i => i.json);\n\n// Filter audit rows to last 24h and find suppressed ones\nconst now = new Date();\nconst cutoff = new Date(now - 24 * 60 * 60 * 1000);\nconst suppressed = auditRows.filter(r => {\n  if (!r.timestamp) return false;\n  const t = new Date(r.timestamp);\n  return t >= cutoff && r.suppress_reason && r.suppress_reason !== '';\n});\n\n// Build report sections\nlet report = '# Daily Triage Watchdog \\u2014 ' + now.toISOString().split('T')[0] + '\\n\\n';\n\n// Section 1: Sales emails with no B-label\nreport += '## Sales Emails With No B-Label (no draft created)\\n\\n';\nif (salesNoB.length === 0 || (salesNoB.length === 1 && !salesNoB[0].id)) {\n  report += '_None today \\u2014 all Sales emails got a B-label._\\n\\n';\n} else {\n  const validSales = salesNoB.filter(m => m.id);\n  report += `**${validSales.length} emails** sitting with TAG-SYS/Sales but no sub-route:\\n\\n`;\n  for (const m of validSales) {\n    const from = m.From || m.from || 'Unknown';\n    const subj = m.Subject || m.subject || 'No subject';\n    const snippet = (m.snippet || m.textPlain || '').substring(0, 150);\n    report += `- **${from}**: ${subj}\\n  _${snippet}_\\n\\n`;\n  }\n}\n\n// Section 2: Unsure emails\nreport += '## Unsure Classifications\\n\\n';\nif (unsure.length === 0 || (unsure.length === 1 && !unsure[0].id)) {\n  report += '_None today._\\n\\n';\n} else {\n  const validUnsure = unsure.filter(m => m.id);\n  report += `**${validUnsure.length} emails** classified as Unsure:\\n\\n`;\n  for (const m of validUnsure) {\n    const from = m.From || m.from || 'Unknown';\n    const subj = m.Subject || m.subject || 'No subject';\n    report += `- **${from}**: ${subj}\\n`;\n  }\n  report += '\\n';\n}\n\n// Section 3: Possible misclassifications\nreport += '## Possible Misclassifications (automated senders tagged as Sales)\\n\\n';\nif (misclass.length === 0 || (misclass.length === 1 && !misclass[0].id)) {\n  report += '_None detected._\\n\\n';\n} else {\n  const validMis = misclass.filter(m => m.id);\n  report += `**${validMis.length} emails** from automated/noreply senders got Sales label:\\n\\n`;\n  for (const m of validMis) {\n    const from = m.From || m.from || 'Unknown';\n    const subj = m.Subject || m.subject || 'No subject';\n    report += `- **${from}**: ${subj}\\n`;\n  }\n  report += '\\n';\n}\n\n// Section 4: Suppressed drafts\nreport += '## Suppressed Drafts (last 24h)\\n\\n';\nif (suppressed.length === 0) {\n  report += '_None suppressed._\\n\\n';\n} else {\n  report += `**${suppressed.length} drafts** were suppressed:\\n\\n`;\n  for (const r of suppressed.slice(0, 20)) {\n    report += `- Thread ${r.thread_id || 'unknown'}: ${r.suppress_reason || 'unknown reason'}\\n`;\n  }\n  report += '\\n';\n}\n\n// Build Claude prompt\nlet prompt = '---\\n\\n## Claude Prompt\\n\\nCopy-paste the section below into Claude:\\n\\n---\\n\\n';\nprompt += '```\\n';\nprompt += 'Here is my daily Email Triage Watchdog report. For each section, tell me:\\n\\n';\nprompt += '1. SALES WITH NO B-LABEL: For each email, what B-label should it have gotten? ';\nprompt += 'Should I adjust the classifier prompt, lower the confidence threshold, or is this a bug?\\n\\n';\nprompt += '2. UNSURE: What should each of these have been classified as? ';\nprompt += 'What rule change would catch them next time?\\n\\n';\nprompt += '3. MISCLASSIFICATIONS: Confirm which are wrong and suggest specific exclusion rules ';\nprompt += 'to add to the classifier prompt.\\n\\n';\nprompt += '4. SUPPRESSED: Are any of these suppressed drafts that actually should have gotten through?\\n\\n';\nprompt += 'After your analysis, give me a prioritized list of changes to make to the Email Triage System.\\n\\n';\nprompt += '--- REPORT DATA ---\\n\\n';\n\n// Add raw data for Claude\nconst validSales2 = salesNoB.filter(m => m.id);\nfor (const m of validSales2) {\n  prompt += `SALES NO B-LABEL: From=${m.From || m.from || '?'} | Subject=${m.Subject || m.subject || '?'} | Snippet=${(m.snippet || '').substring(0, 200)}\\n`;\n}\nconst validUnsure2 = unsure.filter(m => m.id);\nfor (const m of validUnsure2) {\n  prompt += `UNSURE: From=${m.From || m.from || '?'} | Subject=${m.Subject || m.subject || '?'} | Snippet=${(m.snippet || '').substring(0, 200)}\\n`;\n}\nconst validMis2 = misclass.filter(m => m.id);\nfor (const m of validMis2) {\n  prompt += `MISCLASS: From=${m.From || m.from || '?'} | Subject=${m.Subject || m.subject || '?'} | Snippet=${(m.snippet || '').substring(0, 200)}\\n`;\n}\nfor (const r of suppressed.slice(0, 20)) {\n  prompt += `SUPPRESSED: Thread=${r.thread_id || '?'} | Reason=${r.suppress_reason || '?'}\\n`;\n}\nprompt += '```\\n';\n\nreturn [{ json: { report: report + prompt, subject: 'Triage Watchdog \\u2014 ' + now.toISOString().split('T')[0], salesCount: validSales2.length, unsureCount: validUnsure2.length, misclassCount: validMis2.length, suppressedCount: suppressed.length } }];"
+      }
+    },
+    {
+      "id": "gmail-draft-1",
+      "name": "Draft Watchdog Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [920, 500],
+      "parameters": {
+        "operation": "createDraft",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.report }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eeR9kYWgMFeo9vvK",
+          "name": "Gmail - info@dadsprinting.com"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 6PM PDT": {
+      "main": [
+        [
+          { "node": "Sales Without B-Label", "type": "main", "index": 0 },
+          { "node": "Unsure Labels", "type": "main", "index": 0 },
+          { "node": "Misclassified Check", "type": "main", "index": 0 },
+          { "node": "Audit Sheet - Suppressed", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Sales Without B-Label": {
+      "main": [[{ "node": "Compile Watchdog Report", "type": "main", "index": 0 }]]
+    },
+    "Unsure Labels": {
+      "main": [[{ "node": "Compile Watchdog Report", "type": "main", "index": 0 }]]
+    },
+    "Misclassified Check": {
+      "main": [[{ "node": "Compile Watchdog Report", "type": "main", "index": 0 }]]
+    },
+    "Audit Sheet - Suppressed": {
+      "main": [[{ "node": "Compile Watchdog Report", "type": "main", "index": 0 }]]
+    },
+    "Compile Watchdog Report": {
+      "main": [[{ "node": "Draft Watchdog Email", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null
+}
